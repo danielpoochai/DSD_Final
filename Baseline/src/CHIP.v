@@ -4,6 +4,7 @@
 `include "ALU.v"
 `include "Register.v"
 `include "Imm_Gen.v"
+`include "cache.v"
 module CHIP (	clk,
 				rst_n,
 //----------for slow_memD------------
@@ -149,7 +150,7 @@ module RISCV_Pipeline(
 	output DCACHE_stall;
 	output [31:0] DCACHE_rdata;
 
+	
 
 endmodule 
-
 
