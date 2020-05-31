@@ -3,18 +3,19 @@ module PC(
     rst_n,
     pc_in,
     pc_out,
-    stall_pc
+    hazard_stall
     );
+
     input clk;
     input rst_n;
     input [31:0] pc_in;
-    input stall_pc;
+    input hazard_stall;
 
     output reg [31:0] pc_out;
     reg [31:0] pc_out_n;
 
     always@(*) begin
-        if(stall_pc) pc_out_n = pc_in;
+        if(hazard_stall) pc_out_n = pc_in;
         else pc_out_n = pc_out;
     end
 

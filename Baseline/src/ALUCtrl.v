@@ -35,9 +35,9 @@ module ALUCtrl(
                     case(funct3) 
                         3'b000: aluctrl = SUB;
                         3'b010: aluctrl = SLT;
-                        3'b100: aluctrl = SOR;
+                        3'b100: aluctrl = XOR;
                         3'b110: aluctrl = OR;
-                        3'b111: aluctrl = AND:
+                        3'b111: aluctrl = AND;
                         default: aluctrl = 0;
                     endcase
                 end

@@ -6,6 +6,9 @@
 `include "Imm_Gen.v"
 `include "cache.v"
 `include "Branch_Prediction.v"
+`include "forwarding_unit.v"
+`include "hazard_process.v"
+`include "PC.v"
 module CHIP (	clk,
 				rst_n,
 //----------for slow_memD------------
@@ -151,12 +154,11 @@ module RISCV_Pipeline(
 	input DCACHE_stall;
 	input [31:0] DCACHE_rdata;
 
-	wire flush;
-	reg [31:0] instrction, instruction_n;
+	reg [31:0] instruction, instruction_n;
 
 	//PC
-	wire stall_pc;
-	wire [31:0] pc, pc_n, pc_in, pc_out, pc_in_tmp, pc_mux, pc_add_4, pc_add_imm;
+	wire [31:0] pc_in, pc_out, pc_in_tmp, pc_mux, pc_add_4, pc_add_imm;
+	reg [31:0] pc, pc_n, pc_add_4_id, pc_add_4_id_n;
 	//Decoder
 	wire [6:0] opcode;
 	wire jalr, jal, branch, memread, memtoreg, memwrite, alusrc, regwrite, flush;
@@ -172,16 +174,45 @@ module RISCV_Pipeline(
 	wire rs1_data_equal_rs2_data;
 	wire branch_or_not;
 	//hazard process
-	wire [4:0] ID/EX_rt, IF/ID_rs1, IF/ID_rs2, EX/MEM_rt;
-	wire EX/MEM_memread, ID/EX_memread, branch_flag, hazard_stall, hazard_flush, stall_lwbranch;
+	wire hazard_stall, hazard_flush, hazard_mux;
 	//instruction
 	wire [2:0] funct3;
 	wire funct7;
 
 	//ALU
-	wire [31:0] src1, src2;
+	reg [31:0] src1, src2;
 	wire [3:0] 	aluctrl;
 	wire [31:0] result;
+
+	//WB
+	wire [31:0] rd_data_wb_tmp, rd_data_wb;
+	//ID/EX register
+	reg jalr_ex, jal_ex, branch_ex, memread_ex, memtoreg_ex, memwrite_ex, alusrc_ex, regwrite_ex, flush_ex, aluctrl_ex;
+	reg jalr_ex_n, jal_ex_n, branch_ex_n, memread_ex_n, memtoreg_ex_n, memwrite_ex_n, alusrc_ex_n, regwrite_ex_n, flush_ex_n, aluctrl_ex_n;
+	reg [1:0] aluop_ex, aluop_ex_n;
+	reg [31:0]rs1_data_ex, rs2_data_ex, immediate_ex;
+	reg [4:0] rs1_ex, rs2_ex, rd_ex;
+	reg [31:0]rs1_data_ex_n, rs2_data_ex_n, immediate_ex_n;
+	reg [4:0] rs1_ex_n, rs2_ex_n, rd_ex_n; 
+	reg [31:0] pc_add_4_ex, pc_add_4_ex_n;
+	//EX 
+	wire [31:0] src2_tmp;
+	wire [1:0] ForwardA, ForwardB;
+	//EX/MEM register
+	reg memtoreg_mem_n, regwrite_mem_n, memread_mem_n, memwrite_mem_n, jal_mem_n, jalr_mem_n; 
+	reg memtoreg_mem, regwrite_mem, memread_mem, memwrite_mem, jal_mem, jalr_mem;
+	reg [31:0] alu_result_mem, alu_result_mem_n;
+	reg [31:0] src2_mem, src2_mem_n;
+	reg [4:0] rd_mem, rd_mem_n;
+	reg [31:0] pc_add_4_mem, pc_add_4_mem_n;
+	//MEM/WB register
+	reg memread_wb, regwrite_wb, memtoreg_wb, jal_wb, jalr_wb; 
+	reg [31:0] alu_result_wb, mem_result_wb;
+	reg [4:0]  rd_wb;
+	reg memread_wb_n, regwrite_wb_n, memtoreg_wb_n, jal_wb_n, jalr_wb_n; 
+	reg [31:0] alu_result_wb_n, mem_result_wb_n;
+	reg [4:0]  rd_wb_n;
+	reg [31:0] pc_add_4_wb, pc_add_4_wb_n;
 
 	//branch
 	assign rs1_data_equal_rs2_data = (rs1_data == rs2_data);
@@ -198,6 +229,12 @@ module RISCV_Pipeline(
 	//w branch_prediction
 	// assign pc_in 		= ((jal|jalr)|branch_or_not) ? pc_add_imm: pc_add_4;
 
+	//I cache
+	assign ICACHE_ren 	= 1'd1;
+	assign ICACHE_wen 	= 1'd0; 
+	assign ICACHE_addr 	= pc_out[6:2]; 
+	assign ICACHE_wdata = 0;
+
 	//assign instruction
 	assign opcode 	= instruction[6:0];
     assign rs1 		= instruction[19:15];
@@ -206,10 +243,10 @@ module RISCV_Pipeline(
     assign funct3 	= instruction[14:12];
     assign funct7 	= instruction[30];
 
-    reg [31:0] pc_add_4_id, pc_add_4_id_n;
+    
 	//IF/ID 
 	always@(*) begin
-		if(flush) begin
+		if(flush | hazard_flush) begin
 			pc_add_4_id_n 	= 32'd0;
 			pc_n 			= 32'd0;
 			instruction_n 	= 32'd0;
@@ -221,7 +258,7 @@ module RISCV_Pipeline(
 				instruction_n 	= instruction;
 			end
 			else begin
-				instruction_n = {{mem_rdata_I[7:0]},{mem_rdata_I[15:8]},{mem_rdata_I[23:16]},{mem_rdata_I[31:24]}};
+				instruction_n = {{ICACHE_rdata[7:0]},{ICACHE_rdata[15:8]},{ICACHE_rdata[23:16]},{ICACHE_rdata[31:24]}};
 				pc_n = pc_out;
 				pc_add_4_id_n = pc_add_4;
 			end
@@ -237,56 +274,51 @@ module RISCV_Pipeline(
 		else begin
 			pc 			<= pc_n;
 			instruction <= instruction_n;
-			pc_add_4_id <= pc_add_id_n;
+			pc_add_4_id <= pc_add_4_id_n;
 		end
 	end
 
+	
 	//ID/EX register
-	reg jalr_ex, jal_ex, branch_ex, memread_ex, memtoreg_ex, memwrite_ex, alusrc_ex, regwrite_ex, flush_ex, aluctrl_ex;
-	reg jalr_ex_n, jal_ex_n, branch_ex_n, memread_ex_n, memtoreg_ex_n, memwrite_ex_n, alusrc_ex_n, regwrite_ex_n, flush_ex_n, aluctrl_ex_n;
-	reg [1:0] aluop_ex, aluop_ex_n;
-	reg [31:0]rs1_data_ex, rs2_data_ex, immediate_ex;
-	reg [4:0] rs1_ex, rs2_ex;
-	reg [31:0]rs1_data_ex_n, rs2_data_ex_n, immediate_ex_n;
-	reg [4:0] rs1_ex_n, rs2_ex_n; 
-	reg [31:0] pc_add_4_ex, pc_add_4_ex_n;
-
 	always@(*) begin
 		if(ICACHE_stall | DCACHE_stall) begin
-			jalr_ex_n 		<= jalr_ex;
-			jal_ex_n 		<= jal_ex;
-			branch_ex_n 	<= branch_ex; 
-			memread_ex_n 	<= memread_ex;
-			memtoreg_ex_n 	<= memtoreg_ex;
-			memwrite_ex_n 	<= memwrite_ex;
-			alusrc_ex_n 	<= alusrc_ex;
-			aluctrl_ex_n  	<= aluctrl_ex;
-			regwrite_ex_n 	<= regwrite_ex;
-			flush_ex_n 		<= flush_ex;
-			rs1_data_ex_n 	<= rs1_data_ex;
-			rs2_data_ex_n 	<= rs2_data_ex;
-			rs1_ex_n 		<= rs1_ex;
-			rs2_ex_n 		<= rs2_ex;
-			immediate_ex_n	<= immediate_ex;
-			pc_add_4_ex_n   <= pc_add_4_ex;
+			jalr_ex_n 		= jalr_ex;
+			jal_ex_n 		= jal_ex;
+			branch_ex_n 	= branch_ex; 
+			memread_ex_n 	= memread_ex;
+			memtoreg_ex_n 	= memtoreg_ex;
+			memwrite_ex_n 	= memwrite_ex;
+			alusrc_ex_n 	= alusrc_ex;
+			aluctrl_ex_n  	= aluctrl_ex;
+			regwrite_ex_n 	= regwrite_ex;
+			flush_ex_n 		= flush_ex;
+			rs1_data_ex_n 	= rs1_data_ex;
+			rs2_data_ex_n 	= rs2_data_ex;
+			rs1_ex_n 		= rs1_ex;
+			rs2_ex_n 		= rs2_ex;
+			rd_ex_n  		= rd_ex;
+			immediate_ex_n	= immediate_ex;
+			pc_add_4_ex_n   = pc_add_4_ex;
+
  		end
 		else begin
-			jalr_ex_n 		<= jalr;
-			jal_ex_n 		<= jal;
-			branch_ex_n 	<= branch; 
-			memread_ex_n 	<= memread;
-			memtoreg_ex_n 	<= memtoreg;
-			memwrite_ex_n 	<= memwrite;
-			alusrc_ex_n 	<= alusrc;
-			aluctrl_ex_n 	<= aluctrl; 
-			regwrite_ex_n 	<= regwrite;
-			flush_ex_n 		<= flush;
-			rs1_data_ex_n 	<= rs1_data;
-			rs2_data_ex_n 	<= rs2_data;
-			rs1_ex_n 		<= rs1;
-			rs2_ex_n 		<= rs2;
-			immediate_ex_n	<= immediate;
-			pc_add_4_ex_n   <= pc_add_4_id;
+			jalr_ex_n 		= jalr;
+			jal_ex_n 		= jal;
+			branch_ex_n 	= branch; 
+			memread_ex_n 	= memread;
+			memtoreg_ex_n 	= memtoreg;
+			memwrite_ex_n 	= memwrite;
+			alusrc_ex_n 	= alusrc;
+			aluctrl_ex_n 	= aluctrl; 
+			regwrite_ex_n 	= regwrite;
+			flush_ex_n 		= flush;
+			rs1_data_ex_n 	= rs1_data;
+			rs2_data_ex_n 	= rs2_data;
+			rs1_ex_n 		= rs1;
+			rs2_ex_n 		= rs2;
+			rd_ex_n         = rd;
+			immediate_ex_n	= immediate;
+			pc_add_4_ex_n   = pc_add_4_id;
 		end
 	end
 
@@ -306,6 +338,7 @@ module RISCV_Pipeline(
 			rs2_data_ex <= 0;
 			rs1_ex 		<= 0;
 			rs2_ex 		<= 0;
+			rd_ex       <= 0;
 			immediate_ex<= 0;
 			pc_add_4_ex <= 0;
 
@@ -325,38 +358,32 @@ module RISCV_Pipeline(
 			rs2_data_ex <= rs2_data_ex_n;
 			rs1_ex 		<= rs1_ex_n;
 			rs2_ex 		<= rs2_ex_n;
+			rd_ex 		<= rd_ex_n;
 			immediate_ex<= immediate_ex_n;
 			pc_add_4_ex <= pc_add_4_ex_n;
 		end
 	end 
 
-	//EX 
-	wire [31:0] src2_tmp;
-	wire [1:0] ForwardA, ForwardB;
+	//EX
 	assign src2_tmp = alusrc_ex? immediate_ex: rs2_data_ex;
 	always@(*) begin
 		case(ForwardA)
 			2'b00:	src1 = rs1_data_ex;
 			2'b01:	src1 = rd_data_wb;
-			2'b10:	src1 = result_mem;
+			2'b10:	src1 = alu_result_mem;
 			default: src1 = 0;
 		endcase
 
 		case(ForwardB)
 			2'b00:	src2 = src2_tmp;
 			2'b01:	src2 = rd_data_wb;
-			2'b10:	src2 = result_mem;
+			2'b10:	src2 = alu_result_mem;
 			default: src2 = 0;
 		endcase
 	end
 
+	 
 	//EX/MEM register
-	reg memtoreg_mem_n, regwrite_mem_n, memread_mem_n, memwrite_mem_n, jal_mem_n, jalr_mem_n; 
-	reg memtoreg_mem, regwrite_mem, memread_mem, memwrite_mem, jal_mem, jalr_mem;
-	reg [31:0] result_mem, result_mem_n;
-	reg [31:0] src2_mem, src2_mem_n;
-	reg [4:0] rd_mem, rd_mem_n;
-	reg [31:0] pc_add_4_mem, pc_add_4_mem_n; 
 	always@(*) begin
 		if(ICACHE_stall | DCACHE_stall) begin
 			memtoreg_mem_n 	= memtoreg_mem;
@@ -365,7 +392,7 @@ module RISCV_Pipeline(
 			memwrite_mem_n 	= memwrite_mem;
 			jal_mem_n      	= jal_mem;
 			jalr_mem_n     	= jalr_mem;
-			result_mem_n   	= result_mem;
+			alu_result_mem_n= alu_result_mem;
 			src2_mem_n     	= src2_mem;
 			rd_mem_n       	= rd_mem;
 			pc_add_4_mem_n 	= pc_add_4_mem; 
@@ -378,10 +405,10 @@ module RISCV_Pipeline(
 			memwrite_mem_n = memwrite_ex;
 			jal_mem_n      = jal_ex;
 			jalr_mem_n     = jalr_ex;
-			result_mem_n   = result;
+			alu_result_mem_n = result;
 			src2_mem_n     = src2;
 			rd_mem_n       = rd_ex;
-			pc_add_4_mem_n 	= pc_add_4_ex;
+			pc_add_4_mem_n = pc_add_4_ex;
 		end
 	end
 
@@ -393,7 +420,7 @@ module RISCV_Pipeline(
 			memwrite_mem <= 0;
 			jal_mem      <= 0;
 			jalr_mem     <= 0;
-			result_mem   <= 0;
+			alu_result_mem   <= 0;
 			src2_mem     <= 0;
 			rd_mem       <= 0;
 			pc_add_4_mem <= 0;
@@ -405,7 +432,7 @@ module RISCV_Pipeline(
 			memwrite_mem <= memwrite_mem_n;
 			jal_mem      <= jal_mem_n;
 			jalr_mem     <= jalr_mem_n;
-			result_mem   <= result_mem_n;
+			alu_result_mem   <= alu_result_mem_n;
 			src2_mem     <= src2_mem_n;
 			rd_mem       <= rd_mem_n;
 			pc_add_4_mem <= pc_add_4_mem_n;
@@ -414,18 +441,10 @@ module RISCV_Pipeline(
 	//MEM
 	assign DCACHE_ren 	= memread_mem;
 	assign DCACHE_wen 	= memwrite_mem;
-	assign DCACHE_addr 	= result_mem[29:0];
-	assign DCACHE_wdata = scr2_mem;
+	assign DCACHE_addr 	= alu_result_mem[29:0];
+	assign DCACHE_wdata = src2_mem;
 
 	//MEM/WB register
-	reg memread_wb, regwrite_wb, memtoreg_wb, jal_wb, jalr_wb; 
-	reg [31:0] alu_result_wb, mem_result_wb;
-	reg [4:0]  rd_wb;
-	reg memread_wb_n, regwrite_wb_n, memtoreg_wb_n, jal_wb_n, jalr_wb_n; 
-	reg [31:0] alu_result_wb_n, mem_result_wb_n;
-	reg [4:0]  rd_wb_n;
-	reg [31:0] pc_add_4_wb, pc_add_4_wb_n;
-
 	always@(*) begin
 		if(ICACHE_stall | DCACHE_stall) begin
 			memread_wb_n 	= memread_wb;
@@ -471,18 +490,19 @@ module RISCV_Pipeline(
 			pc_add_4_wb     <= pc_add_4_wb_n; 
 		end
 	end
-	//WB
-	wire [31:0] rd_data_wb_tmp, rd_data_wb;
-	assign rd_data_wb_tmp 	= memtoreg_wb? mem_result_wb: result_wb;
+	
+	assign rd_data_wb_tmp 	= memtoreg_wb? mem_result_wb: alu_result_wb;
 	assign rd_data_wb 		= (jal_wb | jalr_wb)? pc_add_4_wb: rd_data_wb_tmp;
 
 	//submodule
-	PC PC(.clk(clk), .rst_n(rst_n), .pc_in(pc_in), .pc_out(pc_out), .stall_pc(stall_pc));
-	Decoder Decoder(.hazard_flush(hazard_flush), .opcode(opcode), .jalr(jalr), .jal(jal), .branch(branch), .memread(memread), .memtoreg(memtoreg), .memwrite(memwrite), .alusrc(alusrc), .regwrite(regwrite), .flush(flush), .aluop(aluop));
+	PC PC(.clk(clk), .rst_n(rst_n), .pc_in(pc_in), .pc_out(pc_out), .hazard_stall(hazard_stall));
+	Decoder Decoder(.hazard_mux(hazard_mux), .opcode(opcode), .jalr(jalr), .jal(jal), .branch(branch), .memread(memread), .memtoreg(memtoreg), .memwrite(memwrite), .alusrc(alusrc), .regwrite(regwrite), .flush(flush), .aluop(aluop));
 	Registers Registers(.clk(clk), .rst_n(rst_n), .regwrite(regwrite), .rs1(rs1), .rs2(rs2), .rd(rd), .rd_data(rd_data_wb), .rs1_data(rs1_data), .rs2_data(rs2_data));
 	Imm_Gen Imm_Gen(.instr(instruction_wire), .immediate(immediate));
 	Branch_Prediction Branch_Prediction(.clk(clk), .rst_n(rst_n), .equal_or_not(equal_or_not), .branch(branch), .branch_or_not(branch_or_not));
-	hazard_process hazard_process(.ID/EX_rt(ID/EX_rt), .IF/ID_rs1(IF/ID_rs1), .IF/ID_rs2(IF/ID_rs2), .EX/MEM_memread(EX/MEM_memread), .ID/EX_memread(ID/EX_memread), .branch_flag(branch_flag), .hazard_stall(hazard_stall), .hazard_flush(hazard_flush), .stall_lwbranch(stall_lwbranch));
+	hazard_process hazard_process(.ID_EX_rt(rd), .IF_ID_rs1(rs1), .IF_ID_rs2(rs2), .EX_MEM_rt(rd_mem),.MEM_WB_rt(rd_wb),.EX_MEM_memread(memread_mem), .ID_EX_memread(memread_ex), .MEM_WB_memread(memread_wb),.IF_ID_op(opcode),.hazard_mux(hazard_mux), .branch_flag(equal_or_not), .hazard_stall(hazard_stall), .hazard_flush(hazard_flush));
+	forwarding_unit forwarding_unit(.ID_EX_rs1(rs1_ex), .ID_EX_rs2(rs2_ex), .EX_MEM_rd(rd_mem), .MEM_WB_rd(rd_wb), .EX_MEM_regwrite(regwrite_mem), .MEM_WB_regwrite(regwrite_wb), .EX_MEM_rs1_control(ForwardA), .EX_MEM_rs2_control(ForwardB));	
 	ALU ALU(.src1(src1), .src2(src2), .aluctrl(aluctrl), .result(result));
 	ALUCtrl ALUCtrl(.aluop(aluop), .funct3(funct3), .funct7(funct7), .aluctrl(aluctrl));
+
 endmodule 

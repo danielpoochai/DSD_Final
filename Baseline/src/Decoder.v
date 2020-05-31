@@ -1,5 +1,5 @@
 module Decoder(
-    hazard_flush,
+    hazard_mux,
     opcode,
     jalr,
     jal,
@@ -12,7 +12,7 @@ module Decoder(
     flush,
     aluop
     );
-    input hazard_flush;
+    input hazard_mux;
     input [6:0] opcode;
 
     output reg jalr;
@@ -46,7 +46,7 @@ module Decoder(
         regwrite= 0;
         flush   = 0;
         aluop   = 0;
-        if(~(hazard_flush)) begin 
+        if(~(hazard_mux)) begin 
             case(opcode)
                 RTYPE: 
                 begin
