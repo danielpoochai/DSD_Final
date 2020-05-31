@@ -171,7 +171,9 @@ module RISCV_Pipeline(
 	//branch
 	wire equal_or_not;
 	wire rs1_data_equal_rs2_data;
+	wire branch_or_not;
 
+	//branch
 	assign rs1_data_equal_rs2_data = (rs1_data == rs2_data);
 	assign equal_or_not = ((branch & funct3[0] & ~(rs1_data_equal_rs2_data))|(branch & ~(funct3[0]) & rs1_data_equal_rs2_data));
 
@@ -180,7 +182,11 @@ module RISCV_Pipeline(
 	assign pc_add_4		= pc_out + 32'd4;
 	assign pc_mux 		= jalr? rs1_data: pc;
 	assign pc_add_imm 	= pc_mux + immediate;
+	//w/o branch_prediction
 	assign pc_in 		= ((jal|jalr)|branch) ? pc_add_imm: pc_add_4;
+	//w branch_prediction
+	assign pc_in 		= ((jal|jalr)|branch_or_not) ? pc_add_imm: pc_add_4;
+
 	//assign instruction
 	assign opcode 	= instruction[6:0];
     assign rs1 		= instruction[19:15];
@@ -188,9 +194,6 @@ module RISCV_Pipeline(
     assign rd 		= instruction[11:7];
     assign funct3 	= instruction[14:12];
     assign funct7 	= instruction[30];
-
-    //Branch
-
 
 	//IF/ID 
 	always@(*) begin
@@ -212,7 +215,8 @@ module RISCV_Pipeline(
 	Decoder Decoder(.opcode(opcode), .jalr(jalr), .jal(jal), .branch(branch), .memread(memread), .memtoreg(memtoreg), .memwrite(memwrite), .alusrc(alusrc), .regwrite(regwrite), .flush(flush), .aluop(aluop));
 	Registers Registers(.clk(clk), .rst_n(rst_n), .regwrite(regwrite), .rs1(rs1), .rs2(rs2), .rd(rd), .rd_data(rd_data), .rs1_data(rs1_data), .rs2_data(rs2_data));
 	Imm_Gen Imm_Gen(.instr(instruction_wire), .immediate(immediate));
-	Branch_Prediction Branch_Prediction(.clk(clk), .rst_n(rst_n), .equal_or_not(equal_or_not), .branch(branch));
+	Branch_Prediction Branch_Prediction(.clk(clk), .rst_n(rst_n), .equal_or_not(equal_or_not), .branch(branch), .branch_or_not(branch_or_not));
+	
 endmodule 
 
 
