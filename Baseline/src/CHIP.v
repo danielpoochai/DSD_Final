@@ -125,3 +125,31 @@ wire [31:0] DCACHE_rdata;
         .mem_ready  (mem_ready_I)
 	);
 endmodule
+
+
+module RISCV_Pipeline(
+	clk, rst_n,
+	ICACHE_ren, ICACHE_wen, ICACHE_addr, ICACHE_wdata, ICACHE_stall, ICACHE_rdata,
+	DCACHE_ren, DCACHE_wen, DCACHE_addr, DCACHE_wdata, DCACHE_stall, DCACHE_rdata
+	);
+	input clk;
+	input rst_n;
+	//I_cache
+	input ICACHE_ren;
+	input ICACHE_wen; 
+	input [29:0] ICACHE_addr; 
+	input [31:0] ICACHE_wdata;
+	output ICACHE_stall;
+	output [31:0] ICACHE_rdata;
+	//D_cache
+	input DCACHE_ren;
+	input DCACHE_wen; 
+	input [29:0] DCACHE_addr; 
+	input [31:0] DCACHE_wdata;
+	output DCACHE_stall;
+	output [31:0] DCACHE_rdata;
+
+
+endmodule 
+
+
