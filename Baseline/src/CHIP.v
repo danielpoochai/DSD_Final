@@ -27,7 +27,6 @@ module CHIP (	clk,
 			);
 input			clk, rst_n;
 //--------------------------
-
 output			mem_read_D;
 output			mem_write_D;
 output	[31:4]	mem_addr_D;
@@ -125,3 +124,4 @@ wire [31:0] DCACHE_rdata;
         .mem_ready  (mem_ready_I)
 	);
 endmodule
+
