@@ -1,4 +1,9 @@
 // Top module of your design, you cannot modify this module!!
+`include "Decoder.v"
+`include "ALUCtrl.v"
+`include "ALU.v"
+`include "Register.v"
+`include "Imm_Gen.v"
 module CHIP (	clk,
 				rst_n,
 //----------for slow_memD------------
