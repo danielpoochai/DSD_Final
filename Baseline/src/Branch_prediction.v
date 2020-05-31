@@ -2,14 +2,14 @@ module Branch_Prediction(
 	clk,
 	rst_n,
 	equal_or_not,
-	opcode,
+	Beq,
 	branch_or_not
 	);
 
 input clk, rst_n;
 input equal_or_not; // equal == 1 branch, equal == 0 not branch 
 input Beq;
-output branch_or_not;
+output reg branch_or_not;
 
 reg state, state_nxt;
 
@@ -22,7 +22,7 @@ localparam not_take_2 = 2'b11; // not jump
 always@(*) 
 begin
 	state_nxt = take_1 ; 
-	if (beq == 1 )
+	if ( Beq == 0 )
 	begin
 		state_nxt = state ;
 	end
@@ -74,7 +74,7 @@ begin
 		end
 		else 
 		begin
-			state_nxt = take_1	
+			state_nxt = take_1;
 		end
 	end
 end
