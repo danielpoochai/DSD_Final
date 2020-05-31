@@ -126,7 +126,7 @@ wire [31:0] DCACHE_rdata;
 	);
 endmodule
 
-<<<<<<< HEAD
+
 
 module RISCV_Pipeline(
 	clk, rst_n,
@@ -154,5 +154,4 @@ module RISCV_Pipeline(
 
 endmodule 
 
-=======
->>>>>>> f219d78f0b96b119ee69e70c413fd4120b33e853
+
