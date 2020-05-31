@@ -2,15 +2,13 @@ module ALU(
     src1,
     src2,
     aluctrl,
-    result,
-    zero
+    result
     );
     input signed [31:0] src1;
     input signed [31:0] src2;
     input [3:0] aluctrl;
 
     output reg signed[31:0] result;
-    output zero;
 
     //type
     localparam AND= 4'b0000;
@@ -22,8 +20,6 @@ module ALU(
     localparam SLL= 4'b0110;
     localparam SRL= 4'b0111;
     localparam SRA= 4'b1000;
-
-    assign zero = ~(result || 32'd0); 
 
     always@(*) begin
         result = 32'd0;

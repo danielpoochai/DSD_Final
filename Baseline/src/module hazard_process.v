@@ -3,7 +3,7 @@ module hazard_process(
     input [4:0] IF/ID_rs1,IF/ID_rs2;
     input [4:0] EX/MEM_rt;
     input EX/MEM_memread;
-    input  ID/EX_memread;
+    input ID/EX_memread;
     input branch_flag;
     output hazard_stall;
     output hazard_flush;

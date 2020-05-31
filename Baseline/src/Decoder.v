@@ -1,4 +1,5 @@
 module Decoder(
+    hazard_flush,
     opcode,
     jalr,
     jal,
@@ -11,6 +12,7 @@ module Decoder(
     flush,
     aluop
     );
+    input hazard_flush;
     input [6:0] opcode;
 
     output reg jalr;
@@ -44,111 +46,113 @@ module Decoder(
         regwrite= 0;
         flush   = 0;
         aluop   = 0;
-        case(opcode)
-            RTYPE: 
-            begin
-                jalr    = 0;
-                jal     = 0;
-                branch  = 0;
-                memread = 0;
-                memtoreg= 0;
-                memwrite= 0;
-                alusrc  = 0;
-                regwrite= 1;
-                flush   = 0;
-                aluop   = 2'b00;
-            end
-            ITYPE: 
-            begin
-                jalr    = 0;
-                jal     = 0;
-                branch  = 0;
-                memread = 0;
-                memtoreg= 0;
-                memwrite= 0;
-                alusrc  = 1;
-                regwrite= 1;
-                flush   = 0;
-                aluop   = 2'b01;
-            end
-            LOAD:
-            begin
-                jalr    = 0;
-                jal     = 0;
-                branch  = 0;
-                memread = 1;
-                memtoreg= 1;
-                memwrite= 0;
-                alusrc  = 1;
-                regwrite= 1;
-                flush   = 0;
-                aluop   = 2'b10;
-            end
-            SAVE:
-            begin
-                jalr    = 0;
-                jal     = 0;
-                branch  = 0;
-                memread = 0;
-                memtoreg= 0;
-                memwrite= 1;
-                alusrc  = 1;
-                regwrite= 0;
-                flush   = 0;
-                aluop   = 2'b10;
-            end
-            BTYPE:
-            begin
-                jalr    = 0;
-                jal     = 0;
-                branch  = 1;
-                memread = 0;
-                memtoreg= 0;
-                memwrite= 0;
-                alusrc  = 0;
-                regwrite= 0;
-                flush   = 0;
-                aluop   = 2'b00;
-            end
-            JTYPE:
-            begin
-                jalr    = 0;
-                jal     = 1;
-                branch  = 0;
-                memread = 0;
-                memtoreg= 0;
-                memwrite= 0;
-                alusrc  = 0;
-                regwrite= 1;
-                flush   = 1;
-                aluop   = 2'b11;
-            end
-            JRTYPE:
-            begin
-                jalr    = 1;
-                jal     = 0;
-                branch  = 0;
-                memread = 0;
-                memtoreg= 0;
-                memwrite= 0;
-                alusrc  = 1;
-                regwrite= 1;
-                flush   = 1;
-                aluop   = 2'b11;
-            end
-            default:
-            begin
-                jalr    = 0;
-                jal     = 0;
-                branch  = 0;
-                memread = 0;
-                memtoreg= 0;
-                memwrite= 0;
-                alusrc  = 0;
-                regwrite= 0;
-                flush   = 0;
-                aluop   = 0;
-            end
-        endcase
+        if(~(hazard_flush)) begin 
+            case(opcode)
+                RTYPE: 
+                begin
+                    jalr    = 0;
+                    jal     = 0;
+                    branch  = 0;
+                    memread = 0;
+                    memtoreg= 0;
+                    memwrite= 0;
+                    alusrc  = 0;
+                    regwrite= 1;
+                    flush   = 0;
+                    aluop   = 2'b00;
+                end
+                ITYPE: 
+                begin
+                    jalr    = 0;
+                    jal     = 0;
+                    branch  = 0;
+                    memread = 0;
+                    memtoreg= 0;
+                    memwrite= 0;
+                    alusrc  = 1;
+                    regwrite= 1;
+                    flush   = 0;
+                    aluop   = 2'b01;
+                end
+                LOAD:
+                begin
+                    jalr    = 0;
+                    jal     = 0;
+                    branch  = 0;
+                    memread = 1;
+                    memtoreg= 1;
+                    memwrite= 0;
+                    alusrc  = 1;
+                    regwrite= 1;
+                    flush   = 0;
+                    aluop   = 2'b10;
+                end
+                SAVE:
+                begin
+                    jalr    = 0;
+                    jal     = 0;
+                    branch  = 0;
+                    memread = 0;
+                    memtoreg= 0;
+                    memwrite= 1;
+                    alusrc  = 1;
+                    regwrite= 0;
+                    flush   = 0;
+                    aluop   = 2'b10;
+                end
+                BTYPE:
+                begin
+                    jalr    = 0;
+                    jal     = 0;
+                    branch  = 1;
+                    memread = 0;
+                    memtoreg= 0;
+                    memwrite= 0;
+                    alusrc  = 0;
+                    regwrite= 0;
+                    flush   = 0;
+                    aluop   = 2'b00;
+                end
+                JTYPE:
+                begin
+                    jalr    = 0;
+                    jal     = 1;
+                    branch  = 0;
+                    memread = 0;
+                    memtoreg= 0;
+                    memwrite= 0;
+                    alusrc  = 0;
+                    regwrite= 1;
+                    flush   = 1;
+                    aluop   = 2'b11;
+                end
+                JRTYPE:
+                begin
+                    jalr    = 1;
+                    jal     = 0;
+                    branch  = 0;
+                    memread = 0;
+                    memtoreg= 0;
+                    memwrite= 0;
+                    alusrc  = 1;
+                    regwrite= 1;
+                    flush   = 1;
+                    aluop   = 2'b11;
+                end
+                default:
+                begin
+                    jalr    = 0;
+                    jal     = 0;
+                    branch  = 0;
+                    memread = 0;
+                    memtoreg= 0;
+                    memwrite= 0;
+                    alusrc  = 0;
+                    regwrite= 0;
+                    flush   = 0;
+                    aluop   = 0;
+                end
+            endcase
+        end
     end
 endmodule
