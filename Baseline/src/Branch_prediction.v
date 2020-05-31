@@ -8,7 +8,11 @@ module Branch_Prediction(
 
 input clk, rst_n;
 input equal_or_not; // equal == 1 branch, equal == 0 not branch 
+<<<<<<< HEAD
 input banch;
+=======
+input branch;
+>>>>>>> 8e218ad993b8b4c725ce18b51387824d3ac4c8d0
 output reg branch_or_not;
 
 reg state, state_nxt;
