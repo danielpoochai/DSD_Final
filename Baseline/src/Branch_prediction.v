@@ -22,53 +22,60 @@ localparam not_take_2 = 2'b11; // not jump
 always@(*) 
 begin
 	state_nxt = take_1 ; 
-	if (state == take_1)
+	if (beq == 1 )
 	begin
-		if (equal_or_not == 1) // jump
-		begin
-			state_nxt = take_1;
-		end
-		else 
-		begin
-			state_nxt = take_2;
-		end
-	end
-	else if (state == take_2)
-	begin
-		if (equal_or_not == 1) // jump
-		begin
-			state_nxt = take_1;
-		end
-		else 
-		begin
-			state_nxt = not_take_2;
-		end
-	end
-	else if (state == not_take_1) 
-	begin
-		if (equal_or_not == 1) // jump
-		begin
-			state_nxt = not_take_2;
-		end
-		else 
-		begin
-			state_nxt = not_take_1;
-		end
-	end
-	else if (state == not_take_2) 
-	begin
-		if (equal_or_not == 1) // jump
-		begin
-			state_nxt = take_2;
-		end
-		else 
-		begin
-			state_nxt = not_take_1;
-		end
+		state_nxt = state ;
 	end
 	else 
 	begin
-		state_nxt = take_1	
+		if (state == take_1)
+		begin
+			if (equal_or_not == 1) // jump
+			begin
+				state_nxt = take_1;
+			end
+			else 
+			begin
+				state_nxt = take_2;
+			end
+		end
+		else if (state == take_2)
+		begin
+			if (equal_or_not == 1) // jump
+			begin
+				state_nxt = take_1;
+			end
+			else 
+			begin
+				state_nxt = not_take_2;
+			end
+		end
+		else if (state == not_take_1) 
+		begin
+			if (equal_or_not == 1) // jump
+			begin
+				state_nxt = not_take_2;
+			end
+			else 
+			begin
+				state_nxt = not_take_1;
+			end
+		end
+		else if (state == not_take_2) 
+		begin
+			if (equal_or_not == 1) // jump
+			begin
+				state_nxt = take_2;
+			end
+			else 
+			begin
+				state_nxt = not_take_1;
+			end
+		end
+		else 
+		begin
+			state_nxt = take_1	
+		end
 	end
 end
 // combination circuit
