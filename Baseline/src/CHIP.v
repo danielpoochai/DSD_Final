@@ -187,8 +187,9 @@ module RISCV_Pipeline(
 	//WB
 	wire [31:0] rd_data_wb_tmp, rd_data_wb;
 	//ID/EX register
-	reg jalr_ex, jal_ex, branch_ex, memread_ex, memtoreg_ex, memwrite_ex, alusrc_ex, regwrite_ex, flush_ex, aluctrl_ex;
-	reg jalr_ex_n, jal_ex_n, branch_ex_n, memread_ex_n, memtoreg_ex_n, memwrite_ex_n, alusrc_ex_n, regwrite_ex_n, flush_ex_n, aluctrl_ex_n;
+	reg jalr_ex, jal_ex, branch_ex, memread_ex, memtoreg_ex, memwrite_ex, alusrc_ex, regwrite_ex, flush_ex;
+	reg [3:0] aluctrl_ex, aluctrl_ex_n;
+	reg jalr_ex_n, jal_ex_n, branch_ex_n, memread_ex_n, memtoreg_ex_n, memwrite_ex_n, alusrc_ex_n, regwrite_ex_n, flush_ex_n;
 	reg [1:0] aluop_ex, aluop_ex_n;
 	reg [31:0]rs1_data_ex, rs2_data_ex, immediate_ex;
 	reg [4:0] rs1_ex, rs2_ex, rd_ex;
@@ -204,6 +205,7 @@ module RISCV_Pipeline(
 	reg [31:0] alu_result_mem, alu_result_mem_n;
 	reg [31:0] src2_mem, src2_mem_n;
 	reg [4:0] rd_mem, rd_mem_n;
+	reg [31:0] rs2_data_mem, rs2_data_mem_n ;
 	reg [31:0] pc_add_4_mem, pc_add_4_mem_n;
 	//MEM/WB register
 	reg memread_wb, regwrite_wb, memtoreg_wb, jal_wb, jalr_wb; 
@@ -396,7 +398,7 @@ module RISCV_Pipeline(
 			src2_mem_n     	= src2_mem;
 			rd_mem_n       	= rd_mem;
 			pc_add_4_mem_n 	= pc_add_4_mem; 
-
+			rs2_data_mem_n 	= rs2_data_mem; 
 		end
 		else begin
 			memtoreg_mem_n = memtoreg_ex;
@@ -409,6 +411,7 @@ module RISCV_Pipeline(
 			src2_mem_n     = src2;
 			rd_mem_n       = rd_ex;
 			pc_add_4_mem_n = pc_add_4_ex;
+			rs2_data_mem_n = rs2_data_ex;
 		end
 	end
 
@@ -424,6 +427,7 @@ module RISCV_Pipeline(
 			src2_mem     <= 0;
 			rd_mem       <= 0;
 			pc_add_4_mem <= 0;
+			rs2_data_mem <= 0;
 		end
 		else begin
 			memtoreg_mem <= memtoreg_mem_n;
@@ -436,13 +440,14 @@ module RISCV_Pipeline(
 			src2_mem     <= src2_mem_n;
 			rd_mem       <= rd_mem_n;
 			pc_add_4_mem <= pc_add_4_mem_n;
+			rs2_data_mem <= rs2_data_mem_n;
 		end
 	end
 	//MEM
 	assign DCACHE_ren 	= memread_mem;
 	assign DCACHE_wen 	= memwrite_mem;
 	assign DCACHE_addr 	= alu_result_mem[29:0];
-	assign DCACHE_wdata = src2_mem;
+	assign DCACHE_wdata = rs2_data_mem;
 
 	//MEM/WB register
 	always@(*) begin
@@ -455,6 +460,7 @@ module RISCV_Pipeline(
 			alu_result_wb_n = alu_result_wb;
 			mem_result_wb_n	= mem_result_wb;
 			pc_add_4_wb_n   = pc_add_4_wb;
+			rd_wb_n     	= rd_wb ;
 		end
 		else begin
 			memread_wb_n 	= memread_mem;
@@ -465,6 +471,7 @@ module RISCV_Pipeline(
 			alu_result_wb_n = alu_result_mem;
 			mem_result_wb_n	= DCACHE_rdata;
 			pc_add_4_wb_n   = pc_add_4_mem;
+			rd_wb_n			= rd_mem;
 		end
 	end
 
@@ -478,6 +485,7 @@ module RISCV_Pipeline(
 			alu_result_wb 	<= 0;
 			mem_result_wb	<= 0;
 			pc_add_4_wb     <= 0;  
+			rd_wb 			<= 0;
 		end
 		else begin
 			memread_wb 		<= memread_wb_n;
@@ -488,6 +496,7 @@ module RISCV_Pipeline(
 			alu_result_wb 	<= alu_result_wb_n;
 			mem_result_wb	<= mem_result_wb_n;
 			pc_add_4_wb     <= pc_add_4_wb_n; 
+			rd_wb 			<= rd_wb_n;
 		end
 	end
 	
@@ -497,12 +506,12 @@ module RISCV_Pipeline(
 	//submodule
 	PC PC(.clk(clk), .rst_n(rst_n), .pc_in(pc_in), .pc_out(pc_out), .hazard_stall(hazard_stall));
 	Decoder Decoder(.hazard_mux(hazard_mux), .opcode(opcode), .jalr(jalr), .jal(jal), .branch(branch), .memread(memread), .memtoreg(memtoreg), .memwrite(memwrite), .alusrc(alusrc), .regwrite(regwrite), .flush(flush), .aluop(aluop));
-	Registers Registers(.clk(clk), .rst_n(rst_n), .regwrite(regwrite), .rs1(rs1), .rs2(rs2), .rd(rd), .rd_data(rd_data_wb), .rs1_data(rs1_data), .rs2_data(rs2_data));
+	Registers Registers(.clk(clk), .rst_n(rst_n), .regwrite(regwrite_wb), .rs1(rs1), .rs2(rs2), .rd(rd_wb), .rd_data(rd_data_wb), .rs1_data(rs1_data), .rs2_data(rs2_data));
 	Imm_Gen Imm_Gen(.instr(instruction_wire), .immediate(immediate));
 	Branch_Prediction Branch_Prediction(.clk(clk), .rst_n(rst_n), .equal_or_not(equal_or_not), .branch(branch), .branch_or_not(branch_or_not));
 	hazard_process hazard_process(.ID_EX_rt(rd), .IF_ID_rs1(rs1), .IF_ID_rs2(rs2), .EX_MEM_rt(rd_mem),.MEM_WB_rt(rd_wb),.EX_MEM_memread(memread_mem), .ID_EX_memread(memread_ex), .MEM_WB_memread(memread_wb),.IF_ID_op(opcode),.hazard_mux(hazard_mux), .branch_flag(equal_or_not), .hazard_stall(hazard_stall), .hazard_flush(hazard_flush));
 	forwarding_unit forwarding_unit(.ID_EX_rs1(rs1_ex), .ID_EX_rs2(rs2_ex), .EX_MEM_rd(rd_mem), .MEM_WB_rd(rd_wb), .EX_MEM_regwrite(regwrite_mem), .MEM_WB_regwrite(regwrite_wb), .EX_MEM_rs1_control(ForwardA), .EX_MEM_rs2_control(ForwardB));	
-	ALU ALU(.src1(src1), .src2(src2), .aluctrl(aluctrl), .result(result));
+	ALU ALU(.src1(src1), .src2(src2), .aluctrl(aluctrl_ex), .result(result));
 	ALUCtrl ALUCtrl(.aluop(aluop), .funct3(funct3), .funct7(funct7), .aluctrl(aluctrl));
 
 endmodule 

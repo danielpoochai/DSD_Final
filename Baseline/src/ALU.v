@@ -28,7 +28,7 @@ module ALU(
             OR:  result = src1 | src2;   
             ADD: result = $signed(src1) + $signed(src2);
             SUB: result = $signed(src1) - $signed(src2);
-            XOR: result = src1 ^ src2;
+            XOR: result = src1 ^ src2; 
             SLT: result = ($signed(src1) < $signed(src2)) ? 32'd1: 32'd0;
             SLL: result = src1 << src2;
             SRL: result = src1 >> src2;

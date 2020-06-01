@@ -33,7 +33,7 @@ module ALUCtrl(
                 if(funct7) aluctrl = SUB;
                 else begin
                     case(funct3) 
-                        3'b000: aluctrl = SUB;
+                        3'b000: aluctrl = ADD;
                         3'b010: aluctrl = SLT;
                         3'b100: aluctrl = XOR;
                         3'b110: aluctrl = OR;
@@ -44,7 +44,7 @@ module ALUCtrl(
             end
             ITYPE:
             begin
-                if(funct7) aluctrl = SRA;
+                if(funct7 && (funct3 == 3'b101)) aluctrl = SRA;
                 else begin
                     case(funct3)
                         3'b000: aluctrl = ADD;

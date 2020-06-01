@@ -15,8 +15,8 @@ module PC(
     reg [31:0] pc_out_n;
 
     always@(*) begin
-        if(hazard_stall) pc_out_n = pc_in;
-        else pc_out_n = pc_out;
+        if(hazard_stall) pc_out_n = pc_out;
+        else pc_out_n = pc_in;
     end
 
     always@(posedge clk)begin
