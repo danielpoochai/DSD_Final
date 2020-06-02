@@ -234,7 +234,7 @@ module RISCV_Pipeline(
 	//I cache
 	assign ICACHE_ren 	= 1'd1;
 	assign ICACHE_wen 	= 1'd0; 
-	assign ICACHE_addr 	= pc_out[6:2]; 
+	assign ICACHE_addr 	= pc_out[31:2]; 
 	assign ICACHE_wdata = 0;
 
 	//assign instruction
@@ -447,7 +447,7 @@ module RISCV_Pipeline(
 	assign DCACHE_ren 	= memread_mem;
 	assign DCACHE_wen 	= memwrite_mem;
 	assign DCACHE_addr 	= alu_result_mem[29:0];
-	assign DCACHE_wdata = rs2_data_mem;
+	assign DCACHE_wdata = {{rs2_data_mem[7:0]},{rs2_data_mem[15:8]},{rs2_data_mem[23:16]},{rs2_data_mem[31:24]}};
 
 	//MEM/WB register
 	always@(*) begin
@@ -469,7 +469,7 @@ module RISCV_Pipeline(
 			jal_wb_n     	= jal_mem;
 			jalr_wb_n    	= jalr_mem;
 			alu_result_wb_n = alu_result_mem;
-			mem_result_wb_n	= DCACHE_rdata;
+			mem_result_wb_n	= {{DCACHE_rdata[7:0]},{DCACHE_rdata[15:8]},{DCACHE_rdata[23:16]},{DCACHE_rdata[31:24]}};
 			pc_add_4_wb_n   = pc_add_4_mem;
 			rd_wb_n			= rd_mem;
 		end
