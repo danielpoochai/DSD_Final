@@ -3,10 +3,6 @@ module forwarding_unit(
     input [4:0] ID_EX_rs2,
     input [4:0] EX_MEM_rd,
     input [4:0] MEM_WB_rd,
-    input jalr_mem,
-    input jalr_wb,
-    input jal_mem,
-    input jal_wb,
     input jalr,
     input branch,
     input EX_MEM_regwrite,
@@ -19,12 +15,12 @@ module forwarding_unit(
 
 always@(*) begin //deal with jalr branch right after JTYPE
     if(jalr || branch) begin
-        if(jal_mem || jalr_mem) begin
+        if(EX_MEM_regwrite && (EX_MEM_rd != 5'd0) && (EX_MEM_rd == ID_EX_rs1)) begin
             is_mem = 1'b1;
             rs1_select = 1'b1;
         end
-        else if (jal_wb || jalr_wb) begin
-            is_mem = 1'b1;
+        else if (MEM_WB_regwrite && EX_MEM_rd != 5'd0 && !(EX_MEM_regwrite && EX_MEM_rd != 5'd0 && EX_MEM_rd == ID_EX_rs1) && MEM_WB_rd == ID_EX_rs1) begin
+            is_mem = 1'b0;
             rs1_select = 1'b1;
         end
     end
