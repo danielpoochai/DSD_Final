@@ -25,10 +25,11 @@ always@(*) begin //deal with jalr branch right after JTYPE
         end
         else if (jal_wb || jalr_wb) begin
             is_mem = 1'b1;
-            rs1_select = 1'b0;
+            rs1_select = 1'b1;
         end
     end
     else begin
+        is_mem = 1'b0;
         rs1_select = 1'b0;
     end
 end
