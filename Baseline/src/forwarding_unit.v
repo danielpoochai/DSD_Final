@@ -19,7 +19,7 @@ always@(*) begin //deal with jalr branch right after JTYPE
             is_mem = 1'b1;
             rs1_select = 1'b1;
         end
-        else if (MEM_WB_regwrite && EX_MEM_rd != 5'd0 && !(EX_MEM_regwrite && EX_MEM_rd != 5'd0 && EX_MEM_rd == ID_EX_rs1) && MEM_WB_rd == ID_EX_rs1) begin
+        else if (MEM_WB_regwrite && MEM_WB_rd != 5'd0 && !(EX_MEM_regwrite && EX_MEM_rd != 5'd0 && EX_MEM_rd == ID_EX_rs1) && MEM_WB_rd == ID_EX_rs1) begin
             is_mem = 1'b0;
             rs1_select = 1'b1;
         end
