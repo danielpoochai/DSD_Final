@@ -22,8 +22,8 @@ module Registers(
 
     reg signed [31:0] REGISTER_BANK[0:31], REGISTER_BANK_NXT[0:31];
 
-    assign rs1_data = REGISTER_BANK[rs1];
-    assign rs2_data = REGISTER_BANK[rs2];
+    assign rs1_data = REGISTER_BANK_NXT[rs1];
+    assign rs2_data = REGISTER_BANK_NXT[rs2];
 
     integer i,k;
     always@(*) begin
