@@ -110,7 +110,7 @@ module Decoder(
                     memwrite= 0;
                     alusrc  = 0;
                     regwrite= 0;
-                    flush   = 0;
+                    flush   = 1;
                     aluop   = 2'b00;
                 end
                 JTYPE:
