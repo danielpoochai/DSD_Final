@@ -3,7 +3,7 @@ module Imm_Gen(
     immediate
     );
     input [31:0] instr;
-    output reg [31:0] immediate;
+    output reg signed [31:0] immediate;
 
     wire [6:0] opcode; 
     assign opcode = instr[6:0];

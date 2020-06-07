@@ -5,7 +5,10 @@ module Branch_Prediction(
 	branch,
 	branch_or_not
 	);
-
+/*
+This function only runs when the branch signal equal to 1 and it will give out
+prediction to branch or not to branch immediately. 
+*/
 input clk, rst_n;
 input equal_or_not; // equal == 1 branch, equal == 0 not branch 
 input branch;

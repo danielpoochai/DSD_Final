@@ -1,21 +1,33 @@
 module hazard_process(
-    input [4:0] ID_EX_rt,
-    input [4:0] IF_ID_rs1,IF_ID_rs2,
-    input [4:0] EX_MEM_rt,
-    input [4:0] MEM_WB_rt,
-    input EX_MEM_memread,
-    input ID_EX_memread,
-    input MEM_WB_memread,
-    input branch_flag,          // real branch_or_not or jal or jalr 
+    ID_EX_rt,
+    IF_ID_rs1,IF_ID_rs2,
+    EX_MEM_rt,
+    MEM_WB_rt,
+    EX_MEM_memread,
+    ID_EX_memread,
+    MEM_WB_memread,
+    branch_flag,          // real branch_or_not or jal or jalr 
     // input branch_predict;    // branch prediction 
-    input [6:0] IF_ID_op,       // read in OP code 
-    input jal,
-    input jalr,
-    output reg hazard_stall,
-    output reg hazard_flush,
-    output reg hazard_mux
+    IF_ID_op,       // read in OP code 
+    jal,
+    jalr,
+    hazard_stall,
+    hazard_flush,
+    hazard_mux
 );
-
+input [4:0] ID_EX_rt;
+input [4:0] IF_ID_rs1,IF_ID_rs2;
+input [4:0] EX_MEM_rt;
+input [4:0] MEM_WB_rt;
+input EX_MEM_memread;
+input ID_EX_memread;
+input MEM_WB_memread;
+input branch_flag;          // real branch_or_not or jal or jalr 
+// input branch_predict;    // branch prediction 
+input [6:0] IF_ID_op;       // read in OP code 
+input jal;
+input jalr;
+output reg hazard_flush, hazard_stall, hazard_mux ;
 /*
 This function used to detect hazard below.
 1. load hazard (stall one cycle)
@@ -36,11 +48,11 @@ begin
         hazard_flush = 1'b1;
         hazard_mux = 1'b1;
     end
-    else if(ID_EX_memread && jal) // only for load harzard 
+    else if(ID_EX_memread && jal) 
     begin 
         hazard_stall = 1'b0;
         hazard_flush = 1'b0;
-        hazard_mux = 1'b0;
+        hazard_mux   = 1'b0;
     end
     else if (branch_flag) // branch , jal, jalr 
     begin 
@@ -60,7 +72,8 @@ begin
         hazard_mux      = 1'b1;
         hazard_flush    = 1'b1;
     end
-    else begin
+    else 
+    begin
         hazard_stall = 1'b0;
         hazard_flush = 1'b0;
         hazard_mux = 1'b0;

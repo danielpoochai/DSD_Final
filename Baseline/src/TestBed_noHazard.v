@@ -86,7 +86,7 @@ module	TestBed(
 			curaddr  <= nxtaddr;
 			duration <= nxtduration;
 			error_num <= nxt_error_num;
-			
+
 			state <= state_next;
 		end
 	end
@@ -99,6 +99,7 @@ module	TestBed(
 							nxtaddr = 0;
 							nxtduration = 0;
 							nxt_error_num = 255;	
+							//$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h", addr, `answer1, data_modify);
 							if( addr==`TestPort1 && data_modify==`answer1 && wen )
 							begin
 								nxt_error_num = 0;
@@ -114,6 +115,7 @@ module	TestBed(
 							if( addr==`TestPort2 && wen && state==0 )
 							begin
 								nxtaddr = addr + 1; 
+								$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h", addr, `answer2, data_modify);
 								if( data_modify != `answer2 ) begin
 									nxt_error_num = error_num + 8'd1;
 								end
@@ -121,6 +123,7 @@ module	TestBed(
 							else if( addr==`TestPort3 && wen && state==0 )
 							begin
 								nxtaddr = addr + 1;
+								$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h", addr, `answer3, data_modify);
 								if( data_modify != `answer3 ) begin
 									nxt_error_num = error_num + 8'd1;
 								end
@@ -128,24 +131,28 @@ module	TestBed(
 							else if( addr==`TestPort4 && wen && state==0 )
 							begin
 								nxtaddr = addr + 1;
+								$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h", addr, `answer3, data_modify);
 								if( data_modify != `answer4 )
 									nxt_error_num = error_num + 8'd1;
 							end
 							else if( addr==`TestPort5 && wen && state==0 )
 							begin
 								nxtaddr = addr + 1;
+								$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h", addr, `answer4, data_modify);
 								if( data_modify != `answer5 )
 									nxt_error_num = error_num + 8'd1;
 							end
 							else if( addr==`TestPort6 && wen && state==0 )
 							begin
 								nxtaddr = addr + 1;
+								$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h", addr, `answer6, data_modify);
 								if( data_modify != `answer6 )
 									nxt_error_num = error_num + 8'd1;
 							end
 							else if( addr==`TestPort7 && wen && state==0 )
 							begin
 								nxtaddr = addr + 1;
+								$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h", addr, `answer7, data_modify);
 								if( data_modify != `answer7 ) begin
 									nxt_error_num = error_num + 8'd1;
 								end
@@ -153,44 +160,54 @@ module	TestBed(
 							else if( addr==`TestPort8 && wen && state==0 )
 							begin
 								nxtaddr = addr + 1;
+								$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h", addr, `answer8, data_modify);
 								if( data_modify != `answer8 ) begin
+									
 									nxt_error_num = error_num + 8'd1;
 								end
 							end
 							else if( addr==`TestPort9 && wen && state==0 )
 							begin
 								nxtaddr = addr + 1;
+								$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h", addr, `answer9, data_modify);
 								if( data_modify != `answer9 ) begin
+									
 									nxt_error_num = error_num + 8'd1;
 								end
 							end
 							else if( addr==`TestPort10 && wen && state==0 )
 							begin
 								nxtaddr = addr + 1;
+								$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h", addr, `answer10, data_modify);
 								if( data_modify != `answer10 )
+									
 									nxt_error_num = error_num + 8'd1;
 							end
 							else if( addr==`TestPort11 && wen && state==0 )
 							begin
 								nxtaddr = addr + 1;
+								$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h", addr, `answer11, data_modify);
 								if( data_modify != `answer11 )
 									nxt_error_num = error_num + 8'd1;
 							end
 							else if( addr==`TestPort12 && wen && state==0 )
 							begin
 								nxtaddr = addr + 1;
+								$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h", addr, `answer12, data_modify);
 								if( data_modify != `answer12 )
 									nxt_error_num = error_num + 8'd1;
 							end
 							else if( addr==`TestPort13 && wen && state==0 )
 							begin
 								nxtaddr = addr + 1;
-								if( data_modify != `answer13 )
+								$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h", addr, `answer13, data_modify);
+								if( data_modify != `answer13 ) 
 									nxt_error_num = error_num + 8'd1;
 							end
 							else if( addr==`TestPort14 && wen && state==0 )
 							begin
 								nxtaddr = addr + 1;
+								$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h", addr, `answer14, data_modify);
 								if( data_modify != `answer14 ) begin
 									nxt_error_num = error_num + 8'd1;
 								end
