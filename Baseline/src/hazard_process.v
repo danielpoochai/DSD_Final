@@ -9,6 +9,8 @@ module hazard_process(
     input branch_flag,          // real branch_or_not or jal or jalr 
     // input branch_predict;    // branch prediction 
     input [6:0] IF_ID_op,       // read in OP code 
+    input jal,
+    input jalr,
     output reg hazard_stall,
     output reg hazard_flush,
     output reg hazard_mux
@@ -22,13 +24,25 @@ This function used to detect hazard below.
 */
 always@(*) 
 begin
-    if(ID_EX_memread && (ID_EX_rt == IF_ID_rs1 || ID_EX_rt == IF_ID_rs2) ) // only for load harzard 
+    if(ID_EX_memread && ~jalr && ~jal && (ID_EX_rt == IF_ID_rs1 || ID_EX_rt == IF_ID_rs2) ) // only for load harzard 
     begin 
         hazard_stall = 1'b1;
         hazard_flush = 1'b1;
         hazard_mux = 1'b1;
     end
-    else if (branch_flag) 
+    else if(ID_EX_memread && jalr  && ID_EX_rt == IF_ID_rs1 ) // only for load harzard 
+    begin 
+        hazard_stall = 1'b1;
+        hazard_flush = 1'b1;
+        hazard_mux = 1'b1;
+    end
+    else if(ID_EX_memread && jal) // only for load harzard 
+    begin 
+        hazard_stall = 1'b0;
+        hazard_flush = 1'b0;
+        hazard_mux = 1'b0;
+    end
+    else if (branch_flag) // branch , jal, jalr 
     begin 
         hazard_stall = 1'b0;
         hazard_flush = 1'b1;
