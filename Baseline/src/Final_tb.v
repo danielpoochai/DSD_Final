@@ -107,7 +107,7 @@ module Final_tb;
 	TestBed testbed(
 		.clk        (clk)           ,
 		.rst        (rst_n)         ,
-		.addr       (DCACHE_addr)   ,
+		.addr       (DCACHE_addr/4) ,
 		.data       (DCACHE_wdata)  ,
 		.wen        (DCACHE_wen)    ,
 		.error_num  (error_num)     ,
@@ -139,7 +139,7 @@ module Final_tb;
 		#(`CYCLE*0.2) rst_n = 1'b0;
 		#(`CYCLE*8.5) rst_n = 1'b1;
      
-		#(`CYCLE*10000) // calculate clock cycles for all operation (you can modify it)
+		#(`CYCLE*100000) // calculate clock cycles for all operation (you can modify it)
 		$display("============================================================================");
 		$display("\n           Error!!! There is something wrong with your code ...!          ");
 		$display("\n                       The test result is .....FAIL                     \n");
