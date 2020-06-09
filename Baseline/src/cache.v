@@ -380,7 +380,7 @@ integer i;
 always@( posedge clk ) begin
     if( proc_reset ) begin
         for(i = 0; i<=3; i = i+1) begin
-            cache_r[i]  <= 154'd0;
+            cache_r[i]  <= 312'd0;
         end
         state_r         <= 2'd0;
         proc_stall_r    <= 1'd0;
