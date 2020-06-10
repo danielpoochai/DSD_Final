@@ -44,6 +44,9 @@ module cache(
     reg proc_stall_r, proc_stall_w;
     reg [31:0] proc_rdata; 
 
+    //reg [29:0] proc_addr_r, proc_addr_nxt;
+    reg [31:0] proc_wdata_r, proc_wdata_nxt;
+
     reg mem_read_r, mem_read_w;
     reg mem_write_r, mem_write_w;
     reg [27:0] mem_addr_r, mem_addr_w;
@@ -54,6 +57,8 @@ module cache(
     wire valid_in_cache_1, valid_in_cache_2;
     wire LRU_1, LRU_2; //Least Recently Used check
     wire hit_1, hit_2; //check which block in the set is hit
+
+    reg counter, counter_nxt ; 
 
 //==== Assignment =========================================
     //assign tag data1 data2 data3 data4
@@ -84,6 +89,8 @@ module cache(
         mem_addr_w      = mem_addr_r;
         mem_wdata_w     = mem_wdata_r;
         proc_rdata      = 32'd0;
+        counter_nxt     = counter ;
+        proc_wdata_nxt  = proc_wdata_r ;
         for(idx = 0; idx <= 3; idx = idx+1) begin
              cache_w[idx] = cache_r[idx];
         end
@@ -91,6 +98,8 @@ module cache(
         case(state_r)
         IDLE:
         begin
+            counter_nxt = 0 ;
+            proc_wdata_nxt = proc_wdata ;
             if(proc_read) begin //read
                 if(hit_1) begin //read hit 1
                     case(proc_addr[1:0])
@@ -123,10 +132,28 @@ module cache(
                     state_w = WRITE_STALL_WRITE;
                     //update block 1 data in cache
                     case(proc_addr[1:0])
-                        2'd3: cache_w[index][283:252]= proc_wdata;
-                        2'd2: cache_w[index][251:220] = proc_wdata; 
-                        2'd1: cache_w[index][219:188] = proc_wdata;
-                        2'd0: cache_w[index][187:156]  = proc_wdata;
+                        2'd3: 
+                        begin
+                            cache_w[index][283:252] = proc_wdata;
+                            cache_w[index][251:156] = cache_r[index][251:156];
+                        end
+                        2'd2: 
+                        begin
+                            cache_w[index][251:220] = proc_wdata; 
+                            cache_w[index][283:252] = cache_r[index][283:252];
+                            cache_w[index][219:156] = cache_r[index][219:156];
+                        end
+                        2'd1: 
+                        begin
+                            cache_w[index][219:188] = proc_wdata;
+                            cache_w[index][283:220] = cache_r[index][283:220];
+                            cache_w[index][187:156] = cache_r[index][187:156];
+                        end
+                        2'd0: 
+                        begin
+                            cache_w[index][187:156] = proc_wdata;
+                            cache_w[index][283:188] = cache_r[index][283:188];
+                        end
                         default: cache_w[index]     = cache_r[index];
                     endcase
                     //signal to change
@@ -142,10 +169,28 @@ module cache(
                     state_w = WRITE_STALL_WRITE;
                     //update data in cache
                     case(proc_addr[1:0])
-                        2'd3: cache_w[index][127:96]= proc_wdata;
-                        2'd2: cache_w[index][95:64] = proc_wdata; 
-                        2'd1: cache_w[index][63:32] = proc_wdata;
-                        2'd0: cache_w[index][31:0]  = proc_wdata;
+                        2'd3: 
+                        begin
+                            cache_w[index][127:96]= proc_wdata;
+                            cache_w[index][96:0]  = cache_r[index][96:0];
+                        end
+                        2'd2: 
+                        begin
+                            cache_w[index][95:64] = proc_wdata; 
+                            cache_w[index][127:96] = cache_r[index][127:96];
+                            cache_w[index][63:0]   = cache_r[index][63:0];
+                        end
+                        2'd1: 
+                        begin
+                            cache_w[index][63:32] = proc_wdata;
+                            cache_w[index][127:64] = cache_r[index][127:64];
+                            cache_r[index][31:0]  = cache_r[index][31:0];
+                        end
+                        2'd0: 
+                        begin
+                            cache_w[index][31:0]  = proc_wdata;
+                            cache_w[index][127:32] = cache_r[index][127:32];
+                        end
                         default: cache_w[index]     = cache_r[index];
                     endcase
                     //signal to change
@@ -167,6 +212,7 @@ module cache(
         end
         READ_STALL:
         begin
+            counter_nxt = 0 ;
             if(mem_ready) begin
                 state_w                 = IDLE;
                 proc_stall_w            = 1'd0;
@@ -180,6 +226,7 @@ module cache(
                         cache_w[index][127:0]   = mem_rdata;    //update data
                         cache_w[index][154]     = 1'd1;         //trigger up LRU_2 bit
                         cache_w[index][310]     = 1'd0;         //trigger down LRU_1 bit
+                        cache_w[index][309:156] = cache_r[index][309:156];
                     end
                     else begin //both block are valid
                         if(cache_r[index][310]) begin //block_1 is recently used -> so update block_2
@@ -187,12 +234,14 @@ module cache(
                             cache_w[index][127:0]   = mem_rdata;
                             cache_w[index][154]     = 1'd1;
                             cache_w[index][310]     = 1'd0;
+                            cache_w[index][309:156] = cache_r[index][309:156];
                         end
                         else begin //block_2 is recently used -> update block_1
                             cache_w[index][309:284] = tag;
                             cache_w[index][283:156] = mem_rdata;
                             cache_w[index][310]     = 1'd1;
                             cache_w[index][154]     = 1'd0;
+                            cache_w[index][153:0] = cache_r[index][153:0];
                         end
                     end
                 end
@@ -202,6 +251,7 @@ module cache(
                     cache_w[index][283:156] = mem_rdata;
                     cache_w[index][310]     = 1'd1;     //update LRU_1
                     cache_w[index][154]     = 1'd0;     //update LRU_2 
+                    cache_w[index][153:0] = cache_r[index][153:0];
                 end
 
                 //read data output
@@ -216,6 +266,7 @@ module cache(
         end
         WRITE_STALL_READ: //when write miss
         begin
+            counter_nxt = 0 ;
             if(mem_ready) begin
                 state_w = WRITE_STALL_WRITE;
                 //updata data in cache
@@ -226,6 +277,7 @@ module cache(
                         cache_w[index][127:0]   = mem_rdata;
                         cache_w[index][154]     = 1'd1;
                         cache_w[index][310]     = 1'd0;
+                        cache_w[index][309:156] = cache_r[index][309:156];
                     end
                     else begin //both blocks are valid
                         if(cache_r[index][310]) begin //block 1 is recently used -> update block 2
@@ -233,12 +285,14 @@ module cache(
                             cache_w[index][127:0]   = mem_rdata;
                             cache_w[index][154]     = 1'd1;
                             cache_w[index][310]     = 1'd0;
+                            cache_w[index][309:156] = cache_r[index][309:156];
                         end
                         else begin //update block 1
                             cache_w[index][309:284] = tag;
                             cache_w[index][283:156] = mem_rdata;
                             cache_w[index][154]     = 1'd0;
                             cache_w[index][310]     = 1'd1;
+                            cache_w[index][153:0] = cache_r[index][153:0];
                         end 
                     end
                 end
@@ -248,29 +302,36 @@ module cache(
                     cache_w[index][283:156] = mem_rdata;
                     cache_w[index][154]     = 1'd0;
                     cache_w[index][310]     = 1'd1;
+                    cache_w[index][153:0] = cache_r[index][153:0];
                 end
                 //write hit
+                mem_wdata_w = mem_wdata_r ;
+                mem_addr_w  = mem_addr_r  ;
                 case(proc_addr[1:0])
                     2'd3: 
                     begin
                         if(valid_in_cache_1) begin
                             if(~(valid_in_cache_2)) begin //update block 2
-                                cache_w[index][127:96]= proc_wdata;
+                                cache_w[index][127:96]= proc_wdata_r;
+                                cache_w[index][95:0] = cache_r[index][95:0] ;
                                 mem_wdata_w = cache_w[index][127:0];     
                             end
                             else begin //update block 2
                                 if(cache_r[index][310]) begin
-                                    cache_w[index][127:96] = proc_wdata;
+                                    cache_w[index][127:96] = proc_wdata_r;
+                                    cache_w[index][95:0] = cache_r[index][95:0] ;
                                     mem_wdata_w = cache_w[index][127:0];
                                 end
                                 else begin //update block 1
-                                    cache_w[index][283:252] = proc_wdata;
+                                    cache_w[index][283:252] = proc_wdata_r;
+                                    cache_w[index][251:156] = cache_r[index][251:156] ;
                                     mem_wdata_w = cache_w[index][283:156];
                                 end               
                             end
                         end 
                         else begin  //update block 1
-                            cache_w[index][283:252] = proc_wdata; 
+                            cache_w[index][283:252] = proc_wdata_r; 
+                            cache_w[index][251:156] = cache_r[index][251:156] ;
                             mem_wdata_w = cache_w[index][283:156];  
                         end                      
                     end
@@ -278,22 +339,30 @@ module cache(
                     begin
                         if(valid_in_cache_1) begin
                             if(~(valid_in_cache_2)) begin //update block 2
-                                cache_w[index][95:64]= proc_wdata;
+                                cache_w[index][95:64]= proc_wdata_r;
+                                cache_w[index][127:96] = cache_r[index][127:96] ;
+                                cache_w[index][63:0] = cache_r[index][63:0] ;
                                 mem_wdata_w = cache_w[index][127:0];          
                             end
                             else begin
                                 if(cache_r[index][310]) begin //update block 2
-                                    cache_w[index][95:64] = proc_wdata;
+                                    cache_w[index][95:64] = proc_wdata_r;
+                                    cache_w[index][127:96] = cache_r[index][127:96] ;
+                                    cache_w[index][63:0] = cache_r[index][63:0] ;
                                     mem_wdata_w = cache_w[index][127:0];     
                                 end
                                 else begin //update block 1
-                                    cache_w[index][251:220] = proc_wdata; 
+                                    cache_w[index][251:220] = proc_wdata_r; 
+                                    cache_w[index][309:252] = cache_r[index][309:252];
+                                    cache_w[index][219:156] = cache_r[index][219:156];
                                     mem_wdata_w = cache_w[index][283:156];                 
                                 end
                             end
                         end 
                         else begin  //update block 1
-                            cache_w[index][251:220] = proc_wdata;
+                            cache_w[index][251:220] = proc_wdata_r;
+                            cache_w[index][309:252] = cache_r[index][309:252];
+                            cache_w[index][219:156] = cache_r[index][219:156];
                             mem_wdata_w = cache_w[index][283:156];    
                         end                     
                     end 
@@ -301,22 +370,30 @@ module cache(
                     begin
                         if(valid_in_cache_1) begin //update block 2
                             if(~(valid_in_cache_2)) begin 
-                                cache_w[index][63:32]= proc_wdata;
+                                cache_w[index][63:32]= proc_wdata_r;
+                                cache_w[index][127:64] = cache_r[index][127:64];
+                                cache_w[index][31:0] = cache_r[index][31:0];
                                 mem_wdata_w = cache_w[index][127:0];     
                             end
                             else begin
                                 if(cache_r[index][310]) begin //update block 2
-                                    cache_w[index][63:32] = proc_wdata;
+                                    cache_w[index][63:32] = proc_wdata_r;
+                                    cache_w[index][127:64] = cache_r[index][127:64];
+                                    cache_w[index][31:0] = cache_r[index][31:0];
                                     mem_wdata_w = cache_w[index][127:0];
                                 end
                                 else begin //update block 1
-                                    cache_w[index][219:188] = proc_wdata;
+                                    cache_w[index][219:188] = proc_wdata_r;
+                                    cache_w[index][309:220] = cache_r[index][309:220];
+                                    cache_w[index][187:156] = cache_r[index][187:156];
                                     mem_wdata_w = cache_w[index][283:156];                 
                                 end
                             end
                         end
                         else begin //update block 1
-                            cache_w[index][219:188] = proc_wdata;
+                            cache_w[index][219:188] = proc_wdata_r;
+                            cache_w[index][309:220] = cache_r[index][309:220];
+                            cache_w[index][187:156] = cache_r[index][187:156];
                             mem_wdata_w = cache_w[index][283:156];
                         end                         
                     end
@@ -324,22 +401,26 @@ module cache(
                     begin
                         if(valid_in_cache_1) begin
                             if(~(valid_in_cache_2)) begin //update block 2
-                                cache_w[index][31:0]= proc_wdata; 
+                                cache_w[index][31:0]= proc_wdata_r;
+                                cache_w[index][127:32] = cache_r[index][127:32]; 
                                 mem_wdata_w = cache_w[index][127:0];    
                             end
                             else begin
                                 if(cache_r[index][310]) begin //update block 2
-                                    cache_w[index][31:0] = proc_wdata;
+                                    cache_w[index][31:0] = proc_wdata_r;
+                                    cache_w[index][127:32] = cache_r[index][127:32]; 
                                     mem_wdata_w = cache_w[index][127:0];
                                 end
                                 else begin //update block 1
-                                    cache_w[index][187:156] = proc_wdata; 
+                                    cache_w[index][187:156] = proc_wdata_r; 
+                                    cache_w[index][283:188] = cache_r[index][283:188]; 
                                     mem_wdata_w = cache_w[index][283:156];                 
                                 end
                             end
                         end
                         else begin //update block 1 
-                            cache_w[index][187:156] = proc_wdata;
+                            cache_w[index][187:156] = proc_wdata_r;
+                            cache_w[index][283:188] = cache_r[index][283:188]; 
                             mem_wdata_w = cache_w[index][283:156]; 
                         end                         
                     end
@@ -354,11 +435,19 @@ module cache(
         end
         WRITE_STALL_WRITE: 
         begin
-            if(mem_ready) begin
+            if(mem_ready && counter == 1) begin 
                 state_w         = IDLE;
                 proc_stall_w    = 1'd0;
                 mem_write_w     = 1'd0;
                 mem_addr_w      = 28'd0;
+                counter_nxt     = 0;
+            end
+            else 
+            begin
+                state_w         = WRITE_STALL_WRITE;
+                counter_nxt     = 1;
+                mem_write_w     = mem_write_r;
+                mem_addr_w      = mem_addr_r;
             end
         end
         default:
@@ -388,6 +477,8 @@ always@( posedge clk ) begin
         mem_write_r     <= 1'd0;
         mem_addr_r      <= 28'd0;
         mem_wdata_r     <= 128'd0;
+        counter         <= 1'd0;
+        proc_wdata_r    <= 0 ;
     end
     else begin
         for(i = 0; i<=3; i = i+1) begin
@@ -399,6 +490,8 @@ always@( posedge clk ) begin
         mem_write_r     <= mem_write_w;
         mem_addr_r      <= mem_addr_w;
         mem_wdata_r     <= mem_wdata_w;
+        counter         <= counter_nxt ;
+        proc_wdata_r    <= proc_wdata_nxt ;
     end
 end
 endmodule
