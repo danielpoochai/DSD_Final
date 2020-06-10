@@ -28,8 +28,7 @@ module CHIP (	clk,
 //----------for TestBed--------------				
 				DCACHE_addr, 
 				DCACHE_wdata,
-				DCACHE_wen,
-				pc_o   
+				DCACHE_wen
 			);
 input			clk, rst_n;
 //--------------------------
@@ -67,9 +66,6 @@ wire [31:0] DCACHE_wdata;
 wire        DCACHE_stall;
 wire [31:0] DCACHE_rdata;
 
-//for debug
-output [31:0] pc_o;
-
 //=========================================
 	// Note that the overall design of your RISCV includes:
 	// 1. pipelined RISCV processor
@@ -94,8 +90,7 @@ output [31:0] pc_o;
 		.DCACHE_addr    (DCACHE_addr)   ,
 		.DCACHE_wdata   (DCACHE_wdata)  ,
 		.DCACHE_stall   (DCACHE_stall)  ,
-		.DCACHE_rdata   (DCACHE_rdata),
-		.pc_o (pc_o)
+		.DCACHE_rdata   (DCACHE_rdata)
 	);
 	
 
@@ -139,14 +134,8 @@ endmodule
 module RISCV_Pipeline(
 	clk, rst_n,
 	ICACHE_ren, ICACHE_wen, ICACHE_addr, ICACHE_wdata, ICACHE_stall, ICACHE_rdata,
-	DCACHE_ren, DCACHE_wen, DCACHE_addr, DCACHE_wdata, DCACHE_stall, DCACHE_rdata,
-	//for debug
-	pc_o
+	DCACHE_ren, DCACHE_wen, DCACHE_addr, DCACHE_wdata, DCACHE_stall, DCACHE_rdata
 	);
-
-//for dubug
-	output [31:0] pc_o;
-//for dubug
 	input clk;
 	input rst_n;
 	//I_cache
@@ -231,9 +220,18 @@ module RISCV_Pipeline(
 	reg [4:0]  rd_wb_n;
 	reg [31:0] pc_add_4_wb, pc_add_4_wb_n;
 
-	//for debug
-	assign pc_o = pc;
-	//for debug
+
+	assign ICACHE_ren 	= (jal || jalr || jump_or_not)? 1'd0: 1'd1;
+	assign ICACHE_wen 	= 0; 
+	assign ICACHE_addr 	= pc_out[31:2]; 
+	assign ICACHE_wdata = 0;
+	// DCACHE_assignment
+	assign DCACHE_ren 	= memread_mem;
+	assign DCACHE_wen 	= memwrite_mem;
+	assign DCACHE_addr 	= alu_result_mem[29:0];
+	assign DCACHE_wdata = {{rs2_data_mem[7:0]},{rs2_data_mem[15:8]},{rs2_data_mem[23:16]},{rs2_data_mem[31:24]}}; 
+
+
 	//branch
 	always@(*) begin
 		case(ForwardA) 
@@ -260,16 +258,9 @@ module RISCV_Pipeline(
 	assign pc_add_imm 	= $signed(pc_mux) + $signed(immediate);
 	//w/o branch_prediction
 	assign pc_in_tmp 	= ((jal|jalr)|jump_or_not) ? pc_add_imm: pc_add_4;
-	assign pc_in 		= ((ICACHE_stall | DCACHE_stall )&&~(hazard_flush)) ? pc_out: pc_in_tmp;
-	//w branch_prediction
-	// assign pc_in 		= ((jal|jalr)|branch_or_not) ? pc_add_imm: pc_add_4;
+	//assign pc_in 		= ((ICACHE_stall | DCACHE_stall)) ? pc_out: pc_in_tmp;
+	assign pc_in 		= ((ICACHE_stall | DCACHE_stall)&&~(hazard_flush)) ? pc_out: pc_in_tmp;
 
-	//I cache
-	assign ICACHE_ren 	= (jal || jalr || jump_or_not ) ? 1'd0 : 1'd1 ;
-	// assign ICACHE_ren 	= 1'd1; 
-	assign ICACHE_wen 	= 1'd0; 
-	assign ICACHE_addr 	= pc_out[31:2]; 
-	assign ICACHE_wdata = 0;
 
 	//assign instruction
 	assign opcode 	= instruction[6:0];
@@ -279,24 +270,21 @@ module RISCV_Pipeline(
     assign funct3 	= instruction[14:12];
     assign funct7 	= instruction[30];
     
-	//IF/ID 
 	always@(*) begin
-		if(flush | hazard_flush) begin
+		if((ICACHE_stall | DCACHE_stall)) begin
+				pc_add_4_id_n 	= pc_add_4_id;
+				pc_n 			= pc;
+				instruction_n 	= instruction;
+		end
+		else if(hazard_flush) begin
 			pc_add_4_id_n 	= 32'd0;
 			pc_n 			= 32'd0;
 			instruction_n 	= 32'd0;
 		end
 		else begin
-			if((ICACHE_stall | DCACHE_stall )&&~(hazard_flush)) begin
-				pc_add_4_id_n 	= pc_add_4_id;
-				pc_n 			= pc;
-				instruction_n 	= instruction;
-			end
-			else begin
-				instruction_n = {{ICACHE_rdata[7:0]},{ICACHE_rdata[15:8]},{ICACHE_rdata[23:16]},{ICACHE_rdata[31:24]}};
-				pc_n = pc_out;
-				pc_add_4_id_n = pc_add_4;
-			end
+			instruction_n 	= {{ICACHE_rdata[7:0]},{ICACHE_rdata[15:8]},{ICACHE_rdata[23:16]},{ICACHE_rdata[31:24]}};
+			pc_n 			= pc_out;
+			pc_add_4_id_n	= pc_add_4;
 		end
 	end
 
@@ -317,7 +305,8 @@ module RISCV_Pipeline(
 	
 	//ID/EX register
 	always@(*) begin
-		if((ICACHE_stall | DCACHE_stall )&&~(hazard_flush)) begin
+		if((ICACHE_stall | DCACHE_stall )) begin //hazard_flush
+		//if((ICACHE_stall | DCACHE_stall && ~(hazard_flush))) begin //hazard_flush
 			jalr_ex_n 		= jalr_ex;
 			jal_ex_n 		= jal_ex;
 			branch_ex_n 	= branch_ex; 
@@ -345,7 +334,7 @@ module RISCV_Pipeline(
 			memtoreg_ex_n 	= hazard_mux ? 0 : memtoreg;
 			memwrite_ex_n 	= hazard_mux ? 0 : memwrite;
 			alusrc_ex_n 	= hazard_mux ? 0 : alusrc;
-			aluctrl_ex_n 	= aluctrl; 
+			aluctrl_ex_n 	= hazard_mux ? 0 : aluctrl; 
 			regwrite_ex_n 	= hazard_mux ? 0 : regwrite;
 			flush_ex_n 		= hazard_mux ? 0 : flush;
 			rs1_data_ex_n 	= rs1_data;
@@ -355,23 +344,6 @@ module RISCV_Pipeline(
 			rd_ex_n         = rd;
 			immediate_ex_n	= immediate;
 			pc_add_4_ex_n   = pc_add_4_id;
-			// jalr_ex_n 		= jalr;
-			// jal_ex_n 		= jal;
-			// branch_ex_n 	= branch; 
-			// memread_ex_n 	= memread;
-			// memtoreg_ex_n 	= memtoreg;
-			// memwrite_ex_n 	= memwrite;
-			// alusrc_ex_n 	= alusrc;
-			// aluctrl_ex_n 	= aluctrl; 
-			// regwrite_ex_n 	= regwrite;
-			// flush_ex_n 		= flush;
-			// rs1_data_ex_n 	= rs1_data;
-			// rs2_data_ex_n 	= rs2_data;
-			// rs1_ex_n 		= rs1;
-			// rs2_ex_n 		= rs2;
-			// rd_ex_n         = rd;
-			// immediate_ex_n	= immediate;
-			// pc_add_4_ex_n   = pc_add_4_id;
 		end
 	end
 
@@ -440,7 +412,8 @@ module RISCV_Pipeline(
 	 
 	//EX/MEM register
 	always@(*) begin
-		if((ICACHE_stall | DCACHE_stall )&& ~(hazard_flush)) begin
+		if((ICACHE_stall | DCACHE_stall )) begin //hazard_flush
+		//if((ICACHE_stall | DCACHE_stall && ~(hazard_flush))) begin //hazard_flush
 			memtoreg_mem_n 	= memtoreg_mem;
 			regwrite_mem_n 	= regwrite_mem;
 			memread_mem_n	= memread_mem;
@@ -496,15 +469,11 @@ module RISCV_Pipeline(
 			rs2_data_mem <= rs2_data_mem_n;
 		end
 	end
-	//MEM
-	assign DCACHE_ren 	= memread_mem;
-	assign DCACHE_wen 	= memwrite_mem;
-	assign DCACHE_addr 	= alu_result_mem[29:0];
-	assign DCACHE_wdata = {{rs2_data_mem[7:0]},{rs2_data_mem[15:8]},{rs2_data_mem[23:16]},{rs2_data_mem[31:24]}};
-
+	
 	//MEM/WB register
 	always@(*) begin
-		if((ICACHE_stall | DCACHE_stall )&&~(hazard_flush)) begin
+		if((ICACHE_stall | DCACHE_stall )) begin //hazard_flush
+		//if((ICACHE_stall | DCACHE_stall && ~(hazard_flush))) begin //hazard_flush
 			memread_wb_n 	= memread_wb;
 			regwrite_wb_n	= regwrite_wb;
 			memtoreg_wb_n	= memtoreg_wb;

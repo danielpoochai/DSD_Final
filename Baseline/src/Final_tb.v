@@ -57,9 +57,6 @@ module Final_tb;
 	wire [15:0] duration;
 	wire finish;	
 
-	//for debug
-	wire [31:0] pc_o;
-	//for debug
 	// Note the design is connected at testbench, include:
 	// 1. CHIP (RISCV + D_cache + I_chache)
 	// 2. slow memory for data
@@ -84,8 +81,7 @@ module Final_tb;
 //----------for TestBed--------------				
 				DCACHE_addr,
 				DCACHE_wdata,
-				DCACHE_wen,
-				pc_o
+				DCACHE_wen
 				);
 	
 	slow_memory slow_memD(
@@ -116,9 +112,8 @@ module Final_tb;
 		.wen        (DCACHE_wen)    ,
 		.error_num  (error_num)     ,
 		.duration   (duration)      ,
-		.finish     (finish),
-		//for debug
-		.pc(pc_o)
+		.finish     (finish)
+
 	);
 	
 `ifdef SDF
@@ -145,7 +140,7 @@ module Final_tb;
 		#(`CYCLE*0.2) rst_n = 1'b0;
 		#(`CYCLE*8.5) rst_n = 1'b1;
      
-		#(`CYCLE*100000) // calculate clock cycles for all operation (you can modify it)
+		#(`CYCLE*10000000) // calculate clock cycles for all operation (you can modify it)
 		$display("============================================================================");
 		$display("\n           Error!!! There is something wrong with your code ...!          ");
 		$display("\n                       The test result is .....FAIL                     \n");
