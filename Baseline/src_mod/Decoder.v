@@ -101,7 +101,7 @@ module Decoder(
                 memwrite= 0;
                 alusrc  = 0;
                 regwrite= 0;
-                aluop   = 2'b00;
+                aluop   = 2'b10;
             end
             JTYPE:
             begin

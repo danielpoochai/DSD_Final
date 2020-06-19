@@ -18,6 +18,8 @@ module forwarding_unit(
 );
 
 always@(*) begin //deal with jalr branch right after JTYPE
+    is_mem = 1'd0;
+    rs1_select = 1'd0;
     if(jalr) begin
         if(EX_MEM_regwrite && (EX_MEM_rd != 5'd0) && (EX_MEM_rd == rs1)) begin
             is_mem = 1'b1;
