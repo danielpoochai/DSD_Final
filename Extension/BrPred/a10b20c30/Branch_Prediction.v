@@ -110,7 +110,7 @@ begin
 	PC_add_4_nxt = PC_add_4_n ; 
 	PC_out = 0 ;
 	predict_jump_nxt = predict_jump_n ;
-	if (branch_IF)  // Beq have the chances to jump
+	if (branch_IF && stall != 1 )  // Beq have the chances to jump
 	begin
 		PC_add_imm_nxt = PC_add_imm ;
 		PC_add_4_nxt = PC_add_4 ;
