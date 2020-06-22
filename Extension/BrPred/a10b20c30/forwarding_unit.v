@@ -14,7 +14,9 @@ module forwarding_unit(
     output reg rs1_select,
     output reg is_mem,
     output reg [1:0] EX_MEM_rs1_control,
-    output reg [1:0] EX_MEM_rs2_control
+    output reg [1:0] EX_MEM_rs2_control,
+    output reg [1:0] branch_A,
+    output reg [1:0] branch_B
 );
 
 always@(*) begin //deal with jalr branch right after JTYPE
@@ -57,6 +59,29 @@ always@(*) begin
     else if (MEM_WB_regwrite && MEM_WB_rd != 5'd0 && !(EX_MEM_regwrite && EX_MEM_rd != 5'd0 && EX_MEM_rd == ID_EX_rs2) && MEM_WB_rd == ID_EX_rs2  )
         EX_MEM_rs2_control = 2'b01;
     else EX_MEM_rs2_control = 2'b00;
+
+end
+
+always@(*) begin
+    if(branch && ID_EX_regwrite && (ID_EX_rd != 5'd0) && (ID_EX_rd == rs1))begin //rs1_data select
+        branch_A = 2'b11;
+    end
+    else if(branch && EX_MEM_regwrite && (EX_MEM_rd != 5'd0) && (EX_MEM_rd == rs1)) begin
+        branch_A = 2'b10;
+    end
+    else if (branch && MEM_WB_regwrite && MEM_WB_rd != 5'd0 && !(EX_MEM_regwrite && EX_MEM_rd != 5'd0 && EX_MEM_rd == rs1) && MEM_WB_rd == rs1  )
+        branch_A = 2'b01;
+    else branch_A = 2'b00;
+
+    if(branch && ID_EX_regwrite && (ID_EX_rd != 5'd0) && (ID_EX_rd == rs2)) begin
+        branch_B = 2'b11;
+    end  
+    else if(branch && EX_MEM_regwrite && EX_MEM_rd != 5'd0 && EX_MEM_rd == rs2) begin
+        branch_B = 2'b10;
+    end
+    else if (branch && MEM_WB_regwrite && MEM_WB_rd != 5'd0 && !(EX_MEM_regwrite && EX_MEM_rd != 5'd0 && EX_MEM_rd == rs2) && MEM_WB_rd == rs2  )
+        branch_B = 2'b01;
+    else branch_B = 2'b00;
 
 end
 

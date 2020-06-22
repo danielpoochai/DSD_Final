@@ -81,7 +81,9 @@ module Final_tb;
 //----------for TestBed--------------				
 				DCACHE_addr,
 				DCACHE_wdata,
-				DCACHE_wen
+				DCACHE_wen,
+				branch,
+				correct
 				);
 	
 	slow_memory slow_memD(
@@ -151,11 +153,29 @@ module Final_tb;
 			$display("Possible solution: The clock cycles may be too small. Please modify it.\n");
 	 	$finish;
 	end
-		
+	
 	always #(`CYCLE*0.5) clk = ~clk;
 	
 	always@(finish)
-	    if(finish)
-	       #(`CYCLE) $finish;		   
+	begin
+		if(finish)
+	    begin
+	    	$display( "Total branch = ",total_branch);
+	    	$display( "Total miss = ", predict_miss);
+	    	#(`CYCLE) $finish;	
+	    end	
+	end
+	    
+
+	integer total_branch = 0 ;
+	integer predict_miss = 0 ;
+	always@(posedge clk)
+	begin
+		if (branch == 1 )
+			total_branch = total_branch + 1 ;
+
+		if (correct == 0 )
+			predict_miss = predict_miss + 1 ;
+	end
 	
 endmodule

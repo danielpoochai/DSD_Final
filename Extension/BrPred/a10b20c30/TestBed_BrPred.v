@@ -65,9 +65,11 @@ module	TestBed(
 		state_idle: 	begin
 							nxtaddr = 0;
 							nxtduration = 0;
-	
+							//if( addr==`TestPort )
+							//	$display("  Addr = 0x%2h  Correct ans: 0x%d  Your ans: 0x%d AT time: %0t", addr, `answer, data_modify, $time);
 							if( addr==`TestPort && data_modify==`answer && wen )
 							begin
+								$display("  Addr = 0x%2h  Correct ans: 0x%d  Your ans: 0x%d AT time: %0t", addr, `answer, data_modify, $time);
 								nxtstate = state_pass;
 							end	 	
 							else nxtstate = state_idle;
