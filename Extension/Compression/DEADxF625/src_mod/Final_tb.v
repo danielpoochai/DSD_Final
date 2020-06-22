@@ -26,8 +26,8 @@
 	`include "./TestBed_compression.v"
 `endif
 `ifdef decompression
-	`define IMEM_INIT "I_mem_decompression_ref"
-	`include "./TestBed_compression_ref.v"
+	`define IMEM_INIT "I_mem_decompression"
+	`include "./TestBed_compression.v"
 `endif			
 
 module Final_tb;

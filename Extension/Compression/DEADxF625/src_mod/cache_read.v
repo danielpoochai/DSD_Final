@@ -1,4 +1,4 @@
-module cache(
+module cache_rd(
     clk,
     proc_reset,
     proc_read,
@@ -44,9 +44,6 @@ module cache(
     reg proc_stall_r, proc_stall_w;
     reg [31:0] proc_rdata; 
 
-    //index reg
-    reg [2:0] index_r, index_w;
-
     reg mem_read_r, mem_read_w;
     reg mem_write_r, mem_write_w;
     reg [27:0] mem_addr_r, mem_addr_w;
@@ -79,7 +76,6 @@ module cache(
         mem_write_w     = mem_write_r;
         mem_addr_w      = mem_addr_r;
         mem_wdata_w     = mem_wdata_r;
-        index_w         = index_r;
         proc_rdata      = 32'd0;
         for(idx = 0; idx <= 7; idx = idx+1) begin
              cache_w[idx] = cache_r[idx];
@@ -88,12 +84,10 @@ module cache(
         case(state_r) 
             IDLE:
             begin
-                index_w = index;
-
-                if(tag == tag_in_cache) begin //25 bits 
+                if(tag == tag_in_cache) begin //25 bits mux
                     if(valid_in_cache) begin
                         if(proc_read) begin  // read hit
-                            case(index_w) //index
+                            case(proc_addr[4:2]) //index
                                 3'd0:
                                 begin
                                     case(proc_addr[1:0]) 
@@ -191,7 +185,7 @@ module cache(
                                 proc_stall_w= 1'd0;
                             end
                             //update data in cache
-                            case(index_w) //index
+                            case(proc_addr[4:2]) //index
                                 3'd0:
                                 begin
                                     case(proc_addr[1:0])
@@ -302,7 +296,7 @@ module cache(
                             mem_read_w      = 1'd1;
                             mem_addr_w      = proc_addr[29:2];
                             //update valid bit
-                            cache_w[index_w][153] = 1'd1;
+                            cache_w[index][153] = 1'd1;
                         end
                         if(proc_write) begin 
                             state_w         = WRITE_STALL_READ;
@@ -310,17 +304,17 @@ module cache(
                             mem_read_w      = 1'd1;
                             mem_addr_w      = proc_addr[29:2];
                             //update valid bit
-                            cache_w[index_w][153] = 1'd1;
+                            cache_w[index][153] = 1'd1;
                         end
                     end
                 end
                 else begin
                     if(dirty_in_cache && (proc_read || proc_write)) begin
                         state_w         = WRITE_STALL_WRITE;
-                        mem_wdata_w     = cache_r[index_w][127:0];
+                        mem_wdata_w     = cache_r[index][127:0];
                         proc_stall_w    = 1'd1;
                         mem_write_w     = 1'd1;
-                        mem_addr_w      = {tag_in_cache, index_w};
+                        mem_addr_w      = {tag_in_cache, index};
                     end
                     else begin
                         if(proc_read) begin
@@ -329,7 +323,7 @@ module cache(
                             mem_read_w      = 1'd1;
                             mem_addr_w      = proc_addr[29:2];
                             //update valid bit
-                            cache_w[index_w][153] = 1'd1;
+                            cache_w[index][153] = 1'd1;
                         end
                         if(proc_write) begin 
                             state_w         = WRITE_STALL_READ;
@@ -337,7 +331,7 @@ module cache(
                             mem_read_w      = 1'd1;
                             mem_addr_w      = proc_addr[29:2];
                             //update valid bit
-                            cache_w[index_w][153] = 1'd1;
+                            cache_w[index][153] = 1'd1;
                         end
                     end
                 end                
@@ -349,8 +343,8 @@ module cache(
                     proc_stall_w            = 1'd0;
                     mem_read_w              = 1'd0;
                     mem_addr_w              = 28'd0;
-                    cache_w[index_r][152:128] = tag;      //update tag
-                    cache_w[index_r][127:0]   = mem_rdata;//update data
+                    cache_w[index][152:128] = tag;      //update tag
+                    cache_w[index][127:0]   = mem_rdata;//update data
                     //read data output
                     case(proc_addr[1:0])
                         2'd3: proc_rdata = mem_rdata[127:96]; //word0
@@ -366,7 +360,7 @@ module cache(
                 if(mem_ready) begin
                     state_w = WRITE_STALL_WRITE;
                     //write hit
-                    case(index_r) //index
+                    case(proc_addr[4:2]) //index
                         3'd0:
                         begin
                             cache_w[0][152:128] = tag;
@@ -496,7 +490,7 @@ module cache(
                 if(mem_ready) begin
                     state_w = IDLE;
                     if(dirty_in_cache) begin //just update memory
-                        cache_w[index_r][154] = 1'd0;
+                        cache_w[index][154] = 1'd0;
                         mem_write_w         = 1'd0;
                         mem_addr_w          = 28'd0;
                     end
@@ -515,7 +509,6 @@ module cache(
                 mem_write_w     = mem_write_r;
                 mem_addr_w      = mem_addr_r;
                 mem_wdata_w     = mem_wdata_r;
-                index_w         = index_r;
                 for(idx = 0; idx <= 7; idx = idx+1) begin
                      cache_w[idx] = cache_r[idx];
                 end
@@ -535,7 +528,6 @@ always@( posedge clk ) begin
         mem_write_r     <= 1'd0;
         mem_addr_r      <= 28'd0;
         mem_wdata_r     <= 128'd0;
-        index_r         <= 3'd0;
     end
     else begin
         for(i = 0; i<=7; i = i+1) begin
@@ -547,7 +539,6 @@ always@( posedge clk ) begin
         mem_write_r     <= mem_write_w;
         mem_addr_r      <= mem_addr_w;
         mem_wdata_r     <= mem_wdata_w;
-        index_r         <= index_w;
     end
 end
 endmodule

@@ -89,8 +89,10 @@ module	TestBed(
 							if( addr==`TestPort && wen && state==0 )
 							begin
 								nxtaddr = curaddr + 1;
-								if( data_modify != answer )
+								if( data_modify != answer ) begin
+									$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h AT time: %0t", addr, answer, data_modify, $time);
 									nxt_error_num = error_num + 8'd1;
+								end
 							end
 							nxtstate = curstate;
 							if( curaddr==`CheckNum )	

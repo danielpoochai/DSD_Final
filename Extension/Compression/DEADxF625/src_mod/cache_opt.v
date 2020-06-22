@@ -93,6 +93,7 @@ module cache(
                 if(tag == tag_in_cache) begin //25 bits 
                     if(valid_in_cache) begin
                         if(proc_read) begin  // read hit
+                            proc_stall_w = 1'd0;
                             case(index_w) //index
                                 3'd0:
                                 begin
@@ -305,7 +306,7 @@ module cache(
                             cache_w[index_w][153] = 1'd1;
                         end
                         if(proc_write) begin 
-                            state_w         = WRITE_STALL_READ;
+                            state_w         = READ_STALL;
                             proc_stall_w    = 1'd1;
                             mem_read_w      = 1'd1;
                             mem_addr_w      = proc_addr[29:2];
@@ -323,16 +324,8 @@ module cache(
                         mem_addr_w      = {tag_in_cache, index_w};
                     end
                     else begin
-                        if(proc_read) begin
+                        if(proc_read||proc_write) begin
                             state_w         = READ_STALL;
-                            proc_stall_w    = 1'd1;
-                            mem_read_w      = 1'd1;
-                            mem_addr_w      = proc_addr[29:2];
-                            //update valid bit
-                            cache_w[index_w][153] = 1'd1;
-                        end
-                        if(proc_write) begin 
-                            state_w         = WRITE_STALL_READ;
                             proc_stall_w    = 1'd1;
                             mem_read_w      = 1'd1;
                             mem_addr_w      = proc_addr[29:2];
@@ -346,149 +339,57 @@ module cache(
             begin
                 if(mem_ready) begin
                     state_w                 = IDLE;
-                    proc_stall_w            = 1'd0;
+                    proc_stall_w            = 1'd1;
                     mem_read_w              = 1'd0;
                     mem_addr_w              = 28'd0;
-                    cache_w[index_r][152:128] = tag;      //update tag
-                    cache_w[index_r][127:0]   = mem_rdata;//update data
-                    //read data output
-                    case(proc_addr[1:0])
-                        2'd3: proc_rdata = mem_rdata[127:96]; //word0
-                        2'd2: proc_rdata = mem_rdata[95:64];  //word1 
-                        2'd1: proc_rdata = mem_rdata[63:32];  //word2
-                        2'd0: proc_rdata = mem_rdata[31:0];   //word3
-                        default: proc_rdata = 32'd0;
-                    endcase
-                end
-            end
-            WRITE_STALL_READ:
-            begin
-                if(mem_ready) begin
-                    state_w = WRITE_STALL_WRITE;
-                    //write hit
-                    case(index_r) //index
+                    case(index_r)
                         3'd0:
                         begin
-                            cache_w[0][152:128] = tag;
-                            cache_w[0][127:0]   = mem_rdata;
-                            cache_w[0][154]     = 1'd0;
-                            case(proc_addr[1:0])
-                                2'd3: cache_w[0][127:96]= proc_wdata;
-                                2'd2: cache_w[0][95:64] = proc_wdata; 
-                                2'd1: cache_w[0][63:32] = proc_wdata;
-                                2'd0: cache_w[0][31:0]  = proc_wdata;
-                                default: cache_w[0]     = cache_r[0];
-                            endcase
-                            mem_wdata_w = cache_w[0][127:0];
+                            cache_w[0][152:128] = tag;      //update tag
+                            cache_w[0][127:0]   = mem_rdata;//update data
                         end
                         3'd1:
                         begin
-                            cache_w[1][152:128] = tag;
-                            cache_w[1][127:0]   = mem_rdata;
-                            cache_w[1][154]     = 1'd0;
-                            case(proc_addr[1:0])
-                                2'd3: cache_w[1][127:96]= proc_wdata;
-                                2'd2: cache_w[1][95:64] = proc_wdata; 
-                                2'd1: cache_w[1][63:32] = proc_wdata;
-                                2'd0: cache_w[1][31:0]  = proc_wdata;
-                                default: cache_w[1]     = cache_r[1];
-                            endcase
-                            mem_wdata_w = cache_w[1][127:0];
+                            cache_w[1][152:128] = tag;      //update tag
+                            cache_w[1][127:0]   = mem_rdata;//update data
                         end
                         3'd2:
                         begin
-                            cache_w[2][152:128] = tag;
-                            cache_w[2][127:0]   = mem_rdata;
-                            cache_w[2][154]     = 1'd0;
-                            case(proc_addr[1:0])
-                                2'd3: cache_w[2][127:96]= proc_wdata;
-                                2'd2: cache_w[2][95:64] = proc_wdata; 
-                                2'd1: cache_w[2][63:32] = proc_wdata;
-                                2'd0: cache_w[2][31:0]  = proc_wdata;
-                                default: cache_w[2]     = cache_r[2];
-                            endcase
-                            mem_wdata_w = cache_w[2][127:0];
+                            cache_w[2][152:128] = tag;      //update tag
+                            cache_w[2][127:0]   = mem_rdata;//update data
                         end
                         3'd3:
                         begin
-                            cache_w[3][152:128] = tag;
-                            cache_w[3][127:0]   = mem_rdata;
-                            cache_w[3][154]     = 1'd0;
-                            case(proc_addr[1:0])
-                                2'd3: cache_w[3][127:96]= proc_wdata;
-                                2'd2: cache_w[3][95:64] = proc_wdata; 
-                                2'd1: cache_w[3][63:32] = proc_wdata;
-                                2'd0: cache_w[3][31:0]  = proc_wdata;
-                                default: cache_w[3]     = cache_r[3];
-                            endcase
-                            mem_wdata_w = cache_w[3][127:0];
+                            cache_w[3][152:128] = tag;      //update tag
+                            cache_w[3][127:0]   = mem_rdata;//update data
                         end
                         3'd4:
                         begin
-                            cache_w[4][152:128] = tag;
-                            cache_w[4][127:0]   = mem_rdata;
-                            cache_w[4][154]     = 1'd0;
-                            case(proc_addr[1:0])
-                                2'd3: cache_w[4][127:96]= proc_wdata;
-                                2'd2: cache_w[4][95:64] = proc_wdata; 
-                                2'd1: cache_w[4][63:32] = proc_wdata;
-                                2'd0: cache_w[4][31:0]  = proc_wdata;
-                                default: cache_w[4]     = cache_r[4];
-                            endcase
-                            mem_wdata_w = cache_w[4][127:0];
+                            cache_w[4][152:128] = tag;      //update tag
+                            cache_w[4][127:0]   = mem_rdata;//update data
                         end
                         3'd5:
                         begin
-                            cache_w[5][152:128] = tag;
-                            cache_w[5][127:0]   = mem_rdata;
-                            cache_w[5][154]     = 1'd0;
-                            case(proc_addr[1:0])
-                                2'd3: cache_w[5][127:96]= proc_wdata;
-                                2'd2: cache_w[5][95:64] = proc_wdata; 
-                                2'd1: cache_w[5][63:32] = proc_wdata;
-                                2'd0: cache_w[5][31:0]  = proc_wdata;
-                                default: cache_w[5]     = cache_r[5];
-                            endcase
-                            mem_wdata_w = cache_w[5][127:0];
+                            cache_w[5][152:128] = tag;      //update tag
+                            cache_w[5][127:0]   = mem_rdata;//update data
                         end
                         3'd6:
                         begin
-                            cache_w[6][152:128] = tag;
-                            cache_w[6][127:0]   = mem_rdata;
-                            cache_w[6][154]     = 1'd0;
-                            case(proc_addr[1:0])
-                                2'd3: cache_w[6][127:96]= proc_wdata;
-                                2'd2: cache_w[6][95:64] = proc_wdata; 
-                                2'd1: cache_w[6][63:32] = proc_wdata;
-                                2'd0: cache_w[6][31:0]  = proc_wdata;
-                                default: cache_w[6]     = cache_r[6];
-                            endcase
-                            mem_wdata_w = cache_w[6][127:0];
+                            cache_w[6][152:128] = tag;      //update tag
+                            cache_w[6][127:0]   = mem_rdata;//update data
                         end
                         3'd7:
                         begin
-                            cache_w[7][152:128] = tag;
-                            cache_w[7][127:0]   = mem_rdata;
-                            cache_w[7][154]     = 1'd0;
-                            case(proc_addr[1:0])
-                                2'd3: cache_w[7][127:96]= proc_wdata;
-                                2'd2: cache_w[7][95:64] = proc_wdata; 
-                                2'd1: cache_w[7][63:32] = proc_wdata;
-                                2'd0: cache_w[7][31:0]  = proc_wdata;
-                                default: cache_w[7]     = cache_r[7];
-                            endcase
-                            mem_wdata_w = cache_w[7][127:0];
+                            cache_w[7][152:128] = tag;      //update tag
+                            cache_w[7][127:0]   = mem_rdata;//update data
                         end
                         default:
                         begin
-                            cache_w[0] = cache_r[0];
+                            cache_w[0][152:128] = tag;      //update tag
+                            cache_w[0][127:0]   = mem_rdata;//update data
                         end
                     endcase
-                    //signal to change
-                    proc_stall_w = 1'd1;
-                    mem_read_w = 1'd0;
-                    mem_write_w = 1'd1;
-                    mem_addr_w = proc_addr[29:2];
+                    
                 end
             end
             WRITE_STALL_WRITE:
@@ -497,8 +398,8 @@ module cache(
                     state_w = IDLE;
                     if(dirty_in_cache) begin //just update memory
                         cache_w[index_r][154] = 1'd0;
-                        mem_write_w         = 1'd0;
-                        mem_addr_w          = 28'd0;
+                        mem_write_w           = 1'd0;
+                        mem_addr_w            = 28'd0;
                     end
                     else begin
                         proc_stall_w    = 1'd0;

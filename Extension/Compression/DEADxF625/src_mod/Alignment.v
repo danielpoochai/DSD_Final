@@ -7,17 +7,19 @@ module Alignment(
 	cache_input,
 	instruction_o,
 	is_compress_o,
-	hazard_flush
+	hazard_flush,
+	jump
 	);
 	
 	//inout
 	input clk;
 	input rst_n;
 	input stall;
+	input hazard_flush;
+	input jump;
 	input [31:0] cache_input;
 	output [31:0] instruction_o;
 	output is_compress_o;
-	input hazard_flush ;
 
 	//internal signal
 	reg [15:0] buffer_r, buffer_w;
@@ -25,6 +27,7 @@ module Alignment(
 	reg is_compress_r, is_compress_w;
 	reg counter_r, counter_w;
 	reg with_buffer_r, with_buffer_w;
+	reg align_stall_r, align_stall_w;
 
 	wire [31:0] instruction_i;
 	reg [15:0] orig_instr_reg;
@@ -42,20 +45,25 @@ module Alignment(
 	Decompressor decompressor(.orig_instr(orig_instr), .decomp_instr(decomp_instr));
 
 	always@(*) begin
+		buffer_w 		= buffer_r;
+		counter_w 		= counter_r;
+		with_buffer_w 	= with_buffer_r;
+		instruction_w 	= instruction_r;
+		is_compress_w 	= is_compress_r;
+		align_stall_w 	= 0;
 		if(stall) begin
 			buffer_w 		= buffer_r;
 			counter_w 		= counter_r;
 			with_buffer_w 	= with_buffer_r;
 			instruction_w 	= instruction_r;
 			is_compress_w 	= is_compress_r;
+			align_stall_w 	= 0;
 		end
-		else if(hazard_flush)
-		begin
-			buffer_w 		= buffer_r;
-			counter_w 		= counter_r;
-			with_buffer_w 	= with_buffer_r;
-			instruction_w 	= instruction_r;
-			is_compress_w 	= is_compress_r;
+		else if(jump) begin
+			buffer_w 		= 0;
+			counter_w 		= 0;
+			with_buffer_w 	= 0;
+			is_compress_w 	= 0;
 		end
 		else begin
 			if(counter_r == 0) begin 
@@ -76,8 +84,9 @@ module Alignment(
 					instruction_w 	= {instruction_i[15:0], buffer_r};
 					buffer_w 		= 16'd0;
 					with_buffer_w 	= 1'b0;
-					is_compress_w 	= 1'b0; 
+					is_compress_w 	= 1'b1; 
 					counter_w		= 1'b1;
+					align_stall_w 	= 1'b0;
 				end
 				else begin
 					if(instruction_i[17:16] == 2'b11) begin //need to stall a cycle to fetch upper 16 bits instruction 
@@ -106,6 +115,7 @@ module Alignment(
 			is_compress_r 	<= 1'd0;
 			counter_r 		<= 1'd0;
 			with_buffer_r 	<= 1'd0;
+			align_stall_r 	<= 1'd0;
 		end
 		else begin
 			buffer_r 		<= buffer_w;
@@ -113,6 +123,7 @@ module Alignment(
 			is_compress_r 	<= is_compress_w;
 			counter_r 		<= counter_w;
 			with_buffer_r 	<= with_buffer_w;
+			align_stall_r 	<= align_stall_w;
 		end
 	end
 endmodule
