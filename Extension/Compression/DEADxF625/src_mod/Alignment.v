@@ -6,7 +6,8 @@ module Alignment(
 	stall,
 	cache_input,
 	instruction_o,
-	is_compress_o
+	is_compress_o,
+	hazard_flush
 	);
 	
 	//inout
@@ -16,6 +17,7 @@ module Alignment(
 	input [31:0] cache_input;
 	output [31:0] instruction_o;
 	output is_compress_o;
+	input hazard_flush ;
 
 	//internal signal
 	reg [15:0] buffer_r, buffer_w;
@@ -47,10 +49,20 @@ module Alignment(
 			instruction_w 	= instruction_r;
 			is_compress_w 	= is_compress_r;
 		end
+		else if(hazard_flush)
+		begin
+			buffer_w 		= buffer_r;
+			counter_w 		= counter_r;
+			with_buffer_w 	= with_buffer_r;
+			instruction_w 	= instruction_r;
+			is_compress_w 	= is_compress_r;
+		end
 		else begin
-			if(counter_r == 0) begin
+			if(counter_r == 0) begin 
 				if(instruction_i[1:0] == 2'b11 || instruction_i == 32'd0) begin
 					instruction_w = instruction_i;
+					is_compress_w = 1'd0 ;
+					with_buffer_w = 1'd0 ;
 				end
 				else begin //compressed instruction
 					orig_instr_reg 	= instruction_i[15:0];
@@ -65,6 +77,7 @@ module Alignment(
 					buffer_w 		= 16'd0;
 					with_buffer_w 	= 1'b0;
 					is_compress_w 	= 1'b0; 
+					counter_w		= 1'b1;
 				end
 				else begin
 					if(instruction_i[17:16] == 2'b11) begin //need to stall a cycle to fetch upper 16 bits instruction 
@@ -72,12 +85,14 @@ module Alignment(
 						buffer_w 		= instruction_i[31:16];
 						with_buffer_w 	= 1'b1;
 						is_compress_w 	= 1'b1;
+						counter_w 		= counter_r ;
 					end
 					else begin //compressed instruction 
 						orig_instr_reg= instruction_i[31:16];
 						instruction_w = decomp_instr;
 						is_compress_w = 1'b1;
 						counter_w 	  = 1'd0;
+						with_buffer_w = 1'd0 ;
 					end
 				end
 			end

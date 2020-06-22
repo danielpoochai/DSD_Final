@@ -179,7 +179,8 @@ module RISCV_Pipeline(
 	wire funct7;
 
 	//ALU
-	reg [31:0] src1, src2;
+	reg [31:0] src1;
+	wire [31:0] src2;
 	wire [3:0] 	aluctrl;
 	wire [31:0] result;
 	wire zero;
@@ -196,7 +197,7 @@ module RISCV_Pipeline(
 	reg [4:0] rs1_ex_n, rs2_ex_n, rd_ex_n; 
 	reg [31:0] pc_add_4_ex, pc_add_4_ex_n;
 	//EX 
-	wire [31:0] src2_tmp;
+	reg [31:0] src2_tmp;
 	wire [1:0] ForwardA, ForwardB;
 	wire rs1_select ; 
 	wire is_mem, is_ex ;
@@ -400,7 +401,7 @@ module RISCV_Pipeline(
 	end 
 
 	//EX
-	//assign src2_tmp = alusrc_ex? immediate_ex: rs2_data_ex;
+	assign src2 = alusrc_ex? immediate_ex: src2_tmp;
 	always@(*) begin
 		case(ForwardA)
 			2'b00:	src1 = rs1_data_ex;
@@ -409,17 +410,15 @@ module RISCV_Pipeline(
 			default: src1 = 0;
 		endcase
 
-		if(alusrc_ex) begin
-			src2 = immediate_ex;
-		end
-		else begin
-			case(ForwardB)
-				2'b00:	src2 = rs2_data_ex;
-				2'b01:	src2 = rd_data_wb;
-				2'b10:	src2 = alu_result_mem;
-	 			default: src2 = 0;
-			endcase
-		end
+		case(ForwardB)
+            2'b00:  src2_tmp = rs2_data_ex;
+            2'b01:  src2_tmp = rd_data_wb;
+            2'b10:  src2_tmp = alu_result_mem;
+            2'b11:  src2_tmp = rs2_data_ex;
+            default: src2_tmp = 0;
+        endcase
+
+
 		// case(ForwardB)
 		// 	2'b00:	src2 = src2_tmp;
 		// 	2'b01:	src2 = rd_data_wb;
@@ -456,7 +455,7 @@ module RISCV_Pipeline(
 			src2_mem_n     = src2;
 			rd_mem_n       = rd_ex;
 			pc_add_4_mem_n = pc_add_4_ex;
-			rs2_data_mem_n = rs2_data_ex;
+			rs2_data_mem_n = src2_tmp;
 		end
 	end
 
@@ -573,5 +572,5 @@ module RISCV_Pipeline(
 	forwarding_unit forwarding_unit(.is_ex(is_ex), .rs1(rs1), .rs2(rs2), .ID_EX_rs1(rs1_ex_wire), .ID_EX_rs2(rs2_ex_wire), .ID_EX_rd(rd_ex_wire), .EX_MEM_rd(rd_mem_wire), .MEM_WB_rd(rd_wb_wire), .jalr(jalr),.ID_EX_regwrite(regwrite_ex_wire), .EX_MEM_regwrite(regwrite_mem_wire), .MEM_WB_regwrite(regwrite_wb_wire), .rs1_select(rs1_select), .EX_MEM_rs1_control(ForwardA), .EX_MEM_rs2_control(ForwardB), .is_mem(is_mem));	
 	ALU ALU(.src1(src1), .src2(src2), .aluctrl(aluctrl_ex_wire), .result(result), .zero(zero));
 	ALUCtrl ALUCtrl(.aluop(aluop), .funct3(funct3), .funct7(funct7), .aluctrl(aluctrl));
-	Alignment Alignment(.clk(clk), .rst_n(rst_n), .stall(stall),.cache_input(ICACHE_rdata), .instruction_o(instruction_align), .is_compress_o(is_compress));
+	Alignment Alignment(.clk(clk), .rst_n(rst_n), .stall(stall),.hazard_flush(hazard_flush), .cache_input(ICACHE_rdata), .instruction_o(instruction_align), .is_compress_o(is_compress));
 endmodule 
