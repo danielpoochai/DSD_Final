@@ -4,7 +4,7 @@
 `include "ALU.v"
 `include "Register.v"
 `include "Imm_Gen.v"
-`include "cache_dm_wb.v"
+`include "cache_dm.v"
 `include "Branch_Prediction.v"
 `include "forwarding_unit.v"
 `include "hazard_process.v"
@@ -157,8 +157,8 @@ module RISCV_Pipeline(
 	reg [31:0] instruction, instruction_n;
 
 	//PC
-	wire signed [31:0] pc_in, pc_out, pc_in_tmp, pc_mux, pc_add_2, pc_add_4, pc_add_imm;
-	reg signed [31:0] pc, pc_n, pc_add_4_id, pc_add_4_id_n, pc_add_imm_ex, pc_add_imm_ex_n;
+	wire signed [31:0] pc_in, pc_out, pc_in_tmp, pc_add_2, pc_add_4, pc_add_imm;
+	reg signed [31:0] pc, pc_n, pc_mux, pc_add_4_id, pc_add_4_id_n, pc_add_imm_ex, pc_add_imm_ex_n;
 	//Decoder
 	wire [6:0] opcode;
 	wire jalr, jal, branch, memread, memtoreg, memwrite, alusrc, regwrite;
@@ -199,7 +199,7 @@ module RISCV_Pipeline(
 	wire [31:0] src2_tmp;
 	wire [1:0] ForwardA, ForwardB;
 	wire rs1_select ; 
-	wire is_mem ;
+	wire is_mem, is_ex ;
 	//EX/MEM register
 	reg memtoreg_mem_n, regwrite_mem_n, memread_mem_n, memwrite_mem_n, jal_mem_n, jalr_mem_n; 
 	reg memtoreg_mem, regwrite_mem, memread_mem, memwrite_mem, jal_mem, jalr_mem;
@@ -220,7 +220,8 @@ module RISCV_Pipeline(
 	//compress instruction
 	wire is_compress;
 	wire [31:0] instruction_align;
-
+	wire stall;
+	assign stall = ICACHE_stall || DCACHE_stall;
 
 	// assign ICACHE_ren 	= (jal || jalr || branch_or_not)? 1'd0: 1'd1;
 	assign ICACHE_ren 	= 1'd1;
@@ -239,7 +240,7 @@ module RISCV_Pipeline(
 
 	assign pc_add_4		= pc_out + 32'd4;
 	assign pc_add_2 	= pc_out + 32'd2;
-	assign pc_mux 		= jalr?(rs1_select?(is_mem?((jalr_mem|jal_mem)?pc_add_4_mem:alu_result_mem):((jalr_wb| jal_wb)?pc_add_4_wb:alu_result_wb)):rs1_data):pc;
+	// assign pc_mux 		= jalr?(rs1_select?(is_ex?result:(is_mem?((jalr_mem|jal_mem)?pc_add_4_mem:alu_result_mem):((jalr_wb| jal_wb)?pc_add_4_wb:alu_result_wb))):rs1_data):pc;
 	assign pc_add_imm 	= $signed(pc_mux) + $signed(immediate);
 
 	//w/o branch_prediction
@@ -254,6 +255,27 @@ module RISCV_Pipeline(
     assign rd 		= instruction[11:7];
     assign funct3 	= instruction[14:12];
     assign funct7 	= instruction[30];
+
+    //pc_mux 
+    always@(*) begin
+    	if(jalr) begin
+    		if(rs1_select) begin
+    			if(is_ex) 					pc_mux = result;
+    			else if(is_mem) begin
+    				if(jalr_mem || jal_mem) pc_mux = pc_add_4_mem;
+    				else 	 				pc_mux = alu_result_mem;
+    			end
+    			else begin
+    				if(jalr_wb || jal_wb) 	pc_mux = pc_add_4_wb;
+    				else 					pc_mux = alu_result_wb;
+    			end
+    		end
+    		else begin
+    			pc_mux = rs1_data;
+    		end
+    	end
+    	else pc_mux = pc;
+    end
     
 	always@(*) begin
 		if((ICACHE_stall | DCACHE_stall)) begin
@@ -378,23 +400,33 @@ module RISCV_Pipeline(
 	end 
 
 	//EX
-	assign src2_tmp = alusrc_ex? immediate_ex: rs2_data_ex;
+	//assign src2_tmp = alusrc_ex? immediate_ex: rs2_data_ex;
 	always@(*) begin
 		case(ForwardA)
 			2'b00:	src1 = rs1_data_ex;
 			2'b01:	src1 = rd_data_wb;
 			2'b10:	src1 = alu_result_mem;
-			// 2'b11: 	src1 = rs1_data_ex;
 			default: src1 = 0;
 		endcase
 
-		case(ForwardB)
-			2'b00:	src2 = src2_tmp;
-			2'b01:	src2 = rd_data_wb;
-			2'b10:	src2 = alu_result_mem;
-			// 2'b11: 	src2 = src2_tmp;
- 			default: src2 = 0;
-		endcase
+		if(alusrc_ex) begin
+			src2 = immediate_ex;
+		end
+		else begin
+			case(ForwardB)
+				2'b00:	src2 = rs2_data_ex;
+				2'b01:	src2 = rd_data_wb;
+				2'b10:	src2 = alu_result_mem;
+	 			default: src2 = 0;
+			endcase
+		end
+		// case(ForwardB)
+		// 	2'b00:	src2 = src2_tmp;
+		// 	2'b01:	src2 = rd_data_wb;
+		// 	2'b10:	src2 = alu_result_mem;
+		// 	// 2'b11: 	src2 = src2_tmp;
+ 	// 		default: src2 = 0;
+		// endcase
 	end
 
 	 
@@ -538,8 +570,8 @@ module RISCV_Pipeline(
 	Decoder Decoder(.opcode(opcode), .jalr(jalr), .jal(jal), .branch(branch), .memread(memread), .memtoreg(memtoreg), .memwrite(memwrite), .alusrc(alusrc), .regwrite(regwrite), .aluop(aluop));	Registers Registers(.clk(clk), .rst_n(rst_n), .regwrite(regwrite_wb), .rs1(rs1), .rs2(rs2), .rd(rd_wb_wire), .rd_data(rd_data_wb), .rs1_data(rs1_data), .rs2_data(rs2_data));
 	Imm_Gen Imm_Gen(.instr(instruction_wire), .immediate(immediate));
 	hazard_process hazard_process(.jal(jal), .jalr(jalr), .ID_EX_rt(rd_ex), .IF_ID_rs1(rs1), .IF_ID_rs2(rs2), .EX_MEM_rt(rd_mem_wire),.MEM_WB_rt(rd_wb_wire),.EX_MEM_memread(memread_mem_wire), .ID_EX_memread(memread_ex_wire), .MEM_WB_memread(memread_wb_wire),.IF_ID_op(opcode), .hazard_mux(hazard_mux), .branch_flag(branch_flag), .jump_flag(jump_flag), .hazard_stall(hazard_stall), .hazard_flush(hazard_flush));
-	forwarding_unit forwarding_unit(.rs1(rs1), .rs2(rs2), .ID_EX_rs1(rs1_ex_wire), .ID_EX_rs2(rs2_ex_wire), .ID_EX_rd(rd_ex_wire), .EX_MEM_rd(rd_mem_wire), .MEM_WB_rd(rd_wb_wire), .jalr(jalr),.ID_EX_regwrite(regwrite_ex_wire), .EX_MEM_regwrite(regwrite_mem_wire), .MEM_WB_regwrite(regwrite_wb_wire), .rs1_select(rs1_select), .EX_MEM_rs1_control(ForwardA), .EX_MEM_rs2_control(ForwardB), .is_mem(is_mem));	
+	forwarding_unit forwarding_unit(.is_ex(is_ex), .rs1(rs1), .rs2(rs2), .ID_EX_rs1(rs1_ex_wire), .ID_EX_rs2(rs2_ex_wire), .ID_EX_rd(rd_ex_wire), .EX_MEM_rd(rd_mem_wire), .MEM_WB_rd(rd_wb_wire), .jalr(jalr),.ID_EX_regwrite(regwrite_ex_wire), .EX_MEM_regwrite(regwrite_mem_wire), .MEM_WB_regwrite(regwrite_wb_wire), .rs1_select(rs1_select), .EX_MEM_rs1_control(ForwardA), .EX_MEM_rs2_control(ForwardB), .is_mem(is_mem));	
 	ALU ALU(.src1(src1), .src2(src2), .aluctrl(aluctrl_ex_wire), .result(result), .zero(zero));
 	ALUCtrl ALUCtrl(.aluop(aluop), .funct3(funct3), .funct7(funct7), .aluctrl(aluctrl));
-	Alignment Alignment(.clk(clk), .rst_n(rst_n), .cache_input(ICACHE_rdata), .instruction_o(instruction_align), .is_compress(is_compress));
+	Alignment Alignment(.clk(clk), .rst_n(rst_n), .stall(stall),.cache_input(ICACHE_rdata), .instruction_o(instruction_align), .is_compress_o(is_compress));
 endmodule 

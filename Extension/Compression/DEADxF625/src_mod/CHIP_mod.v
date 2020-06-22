@@ -9,7 +9,6 @@
 `include "forwarding_unit.v"
 `include "hazard_process.v"
 `include "PC.v"
-`include "Alignment.v"
 module CHIP (	clk,
 				rst_n,
 //----------for slow_memD------------
@@ -157,7 +156,7 @@ module RISCV_Pipeline(
 	reg [31:0] instruction, instruction_n;
 
 	//PC
-	wire signed [31:0] pc_in, pc_out, pc_in_tmp, pc_mux, pc_add_2, pc_add_4, pc_add_imm;
+	wire signed [31:0] pc_in, pc_out, pc_in_tmp, pc_mux, pc_add_4, pc_add_imm;
 	reg signed [31:0] pc, pc_n, pc_add_4_id, pc_add_4_id_n, pc_add_imm_ex, pc_add_imm_ex_n;
 	//Decoder
 	wire [6:0] opcode;
@@ -217,33 +216,26 @@ module RISCV_Pipeline(
 	reg [4:0]  rd_wb_n;
 	reg [31:0] pc_add_4_wb, pc_add_4_wb_n;
 
-	//compress instruction
-	wire is_compress;
-	wire [31:0] instruction_align;
 
-
-	// assign ICACHE_ren 	= (jal || jalr || branch_or_not)? 1'd0: 1'd1;
-	assign ICACHE_ren 	= 1'd1;
+	assign ICACHE_ren 	= (jal || jalr || branch_or_not)? 1'd0: 1'd1;
 	assign ICACHE_wen 	= 0; 
 	assign ICACHE_addr 	= pc_out[31:2]; 
 	assign ICACHE_wdata = 0;
 	// DCACHE_assignment
 	assign DCACHE_ren 	= memread_mem;
 	assign DCACHE_wen 	= memwrite_mem;
-	assign DCACHE_addr 	= alu_result_mem[29:0];
+	assign DCACHE_addr 	= alu_result_mem[31:2];
 	assign DCACHE_wdata = {{rs2_data_mem[7:0]},{rs2_data_mem[15:8]},{rs2_data_mem[23:16]},{rs2_data_mem[31:24]}}; 
 	
 	assign branch_or_not= (branch_ex & funct3_ex & ~zero)|(branch_ex & ~(funct3_ex) & zero);
 	//assignment
 	assign instruction_wire = instruction;
-
 	assign pc_add_4		= pc_out + 32'd4;
-	assign pc_add_2 	= pc_out + 32'd2;
 	assign pc_mux 		= jalr?(rs1_select?(is_mem?((jalr_mem|jal_mem)?pc_add_4_mem:alu_result_mem):((jalr_wb| jal_wb)?pc_add_4_wb:alu_result_wb)):rs1_data):pc;
 	assign pc_add_imm 	= $signed(pc_mux) + $signed(immediate);
 
 	//w/o branch_prediction
-	assign pc_in_tmp 	= branch_or_not? pc_add_imm_ex: ((jal|jalr)? pc_add_imm: (is_compress? pc_add_2: pc_add_4));
+	assign pc_in_tmp 	= branch_or_not? pc_add_imm_ex: ((jal|jalr)? pc_add_imm: pc_add_4);
 	assign pc_in 		= ((ICACHE_stall | DCACHE_stall)) ? pc_out: pc_in_tmp;
 
 
@@ -267,10 +259,9 @@ module RISCV_Pipeline(
 			instruction_n 	= 32'd0;
 		end
 		else begin
-			//instruction_n 	= {{ICACHE_rdata[7:0]},{ICACHE_rdata[15:8]},{ICACHE_rdata[23:16]},{ICACHE_rdata[31:24]}};
-			instruction_n 	= instruction_align;
+			instruction_n 	= {{ICACHE_rdata[7:0]},{ICACHE_rdata[15:8]},{ICACHE_rdata[23:16]},{ICACHE_rdata[31:24]}};
 			pc_n 			= pc_out;
-			pc_add_4_id_n	= is_compress? pc_add_2: pc_add_4;
+			pc_add_4_id_n	= pc_add_4;
 		end
 	end
 
@@ -541,5 +532,4 @@ module RISCV_Pipeline(
 	forwarding_unit forwarding_unit(.rs1(rs1), .rs2(rs2), .ID_EX_rs1(rs1_ex_wire), .ID_EX_rs2(rs2_ex_wire), .ID_EX_rd(rd_ex_wire), .EX_MEM_rd(rd_mem_wire), .MEM_WB_rd(rd_wb_wire), .jalr(jalr),.ID_EX_regwrite(regwrite_ex_wire), .EX_MEM_regwrite(regwrite_mem_wire), .MEM_WB_regwrite(regwrite_wb_wire), .rs1_select(rs1_select), .EX_MEM_rs1_control(ForwardA), .EX_MEM_rs2_control(ForwardB), .is_mem(is_mem));	
 	ALU ALU(.src1(src1), .src2(src2), .aluctrl(aluctrl_ex_wire), .result(result), .zero(zero));
 	ALUCtrl ALUCtrl(.aluop(aluop), .funct3(funct3), .funct7(funct7), .aluctrl(aluctrl));
-	Alignment Alignment(.clk(clk), .rst_n(rst_n), .cache_input(ICACHE_rdata), .instruction_o(instruction_align), .is_compress(is_compress));
 endmodule 

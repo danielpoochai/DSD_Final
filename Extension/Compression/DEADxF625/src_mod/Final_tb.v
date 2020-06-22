@@ -26,8 +26,8 @@
 	`include "./TestBed_compression.v"
 `endif
 `ifdef decompression
-	`define IMEM_INIT "I_mem_decompression"
-	`include "./TestBed_compression.v"
+	`define IMEM_INIT "I_mem_decompression_ref"
+	`include "./TestBed_compression_ref.v"
 `endif			
 
 module Final_tb;
@@ -107,7 +107,7 @@ module Final_tb;
 	TestBed testbed(
 		.clk        (clk)           ,
 		.rst        (rst_n)         ,
-		.addr       (DCACHE_addr) ,
+		.addr       (DCACHE_addr/4) ,
 		.data       (DCACHE_wdata)  ,
 		.wen        (DCACHE_wen)    ,
 		.error_num  (error_num)     ,
