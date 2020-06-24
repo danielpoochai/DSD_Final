@@ -12,11 +12,10 @@ module ALU(
     output reg signed[31:0] result;
     output zero;
 
-    reg signed [31:0] minus_result;
-
+    wire [31:0] result_minus; 
     //assignment
-    assign zero = result == 32'd0;
-
+    assign zero = !(result | 32'd0);
+    assign result_minus = $signed(src1) - $signed(src2);
     //type
     localparam AND= 4'b0000;
     localparam OR = 4'b0001;
@@ -30,14 +29,13 @@ module ALU(
 
     always@(*) begin
         result = 32'd0;
-        minus_result = $signed(src1) - $signed(src2);
         case(aluctrl)
             AND: result = src1 & src2;
             OR:  result = src1 | src2;   
             ADD: result = $signed(src1) + $signed(src2);
-            SUB: result = minus_result ;
+            SUB: result = result_minus;
             XOR: result = src1 ^ src2; 
-            SLT: result = (minus_result < 0) ? 32'd1: 32'd0;
+            SLT: result = result_minus[31];
             SLL: result = src1 << src2;
             SRL: result = src1 >> src2;
             SRA: result = src1 >>> src2;

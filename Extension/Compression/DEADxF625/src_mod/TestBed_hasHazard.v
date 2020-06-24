@@ -92,7 +92,7 @@ module	TestBed(
 								
 								if( data_modify != answer )
 								begin
-									$display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h AT time: %0t", addr, answer, data_modify, $time);
+									// $display("  Addr = 0x%2h  Correct ans: 0x%h  Your ans: 0x%h AT time: %0t", addr, answer, data_modify, $time);
 									nxt_error_num = error_num + 8'd1;
 								end
 							end

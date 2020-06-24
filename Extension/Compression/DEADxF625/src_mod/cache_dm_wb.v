@@ -315,15 +315,15 @@ module cache(
                     end
                 end
                 else begin
-                    if(dirty_in_cache && (proc_read || proc_write)) begin
-                        state_w         = WRITE_STALL_WRITE;
-                        mem_wdata_w     = cache_r[index_w][127:0];
-                        proc_stall_w    = 1'd1;
-                        mem_write_w     = 1'd1;
-                        mem_addr_w      = {tag_in_cache, index_w};
-                    end
-                    else begin
-                        if(proc_read) begin
+                    if(proc_read) begin
+                        if(dirty_in_cache) begin
+                            state_w         = WRITE_STALL_WRITE;
+                            mem_wdata_w     = cache_r[index_w][127:0];
+                            proc_stall_w    = 1'd1;
+                            mem_write_w     = 1'd1;
+                            mem_addr_w      = {tag_in_cache, index_w};
+                        end
+                        else begin
                             state_w         = READ_STALL;
                             proc_stall_w    = 1'd1;
                             mem_read_w      = 1'd1;
@@ -331,7 +331,16 @@ module cache(
                             //update valid bit
                             cache_w[index_w][153] = 1'd1;
                         end
-                        if(proc_write) begin 
+                    end
+                    if(proc_write) begin
+                        if(dirty_in_cache) begin
+                            state_w         = WRITE_STALL_WRITE;
+                            mem_wdata_w     = cache_r[index_w][127:0];
+                            proc_stall_w    = 1'd1;
+                            mem_write_w     = 1'd1;
+                            mem_addr_w      = {tag_in_cache, index_w};
+                        end
+                        else begin
                             state_w         = WRITE_STALL_READ;
                             proc_stall_w    = 1'd1;
                             mem_read_w      = 1'd1;
@@ -340,6 +349,31 @@ module cache(
                             cache_w[index_w][153] = 1'd1;
                         end
                     end
+                    // if(dirty_in_cache && (proc_read || proc_write)) begin
+                    //     state_w         = WRITE_STALL_WRITE;
+                    //     mem_wdata_w     = cache_r[index_w][127:0];
+                    //     proc_stall_w    = 1'd1;
+                    //     mem_write_w     = 1'd1;
+                    //     mem_addr_w      = {tag_in_cache, index_w};
+                    // end
+                    // else begin
+                    //     if(proc_read) begin
+                    //         state_w         = READ_STALL;
+                    //         proc_stall_w    = 1'd1;
+                    //         mem_read_w      = 1'd1;
+                    //         mem_addr_w      = proc_addr[29:2];
+                    //         //update valid bit
+                    //         cache_w[index_w][153] = 1'd1;
+                    //     end
+                    //     if(proc_write) begin 
+                    //         state_w         = WRITE_STALL_READ;
+                    //         proc_stall_w    = 1'd1;
+                    //         mem_read_w      = 1'd1;
+                    //         mem_addr_w      = proc_addr[29:2];
+                    //         //update valid bit
+                    //         cache_w[index_w][153] = 1'd1;
+                    //     end
+                    // end
                 end                
             end
             READ_STALL:
