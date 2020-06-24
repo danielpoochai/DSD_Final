@@ -8,11 +8,11 @@ module PC(
 
     input clk;
     input rst_n;
-    input [8:0] pc_in;
+    input [31:0] pc_in;
     input hazard_stall;
 
-    output reg [8:0] pc_out;
-    reg [8:0] pc_out_n;
+    output reg [31:0] pc_out;
+    reg [31:0] pc_out_n;
 
     always@(*) begin
         if(hazard_stall) pc_out_n = pc_out;

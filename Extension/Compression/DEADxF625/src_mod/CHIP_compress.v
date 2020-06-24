@@ -4,7 +4,7 @@
 `include "ALU.v"
 `include "Register.v"
 `include "Imm_Gen.v"
-`include "cache_dm.v"
+`include "cache_dm_wb.v"
 `include "Branch_Prediction.v"
 `include "forwarding_unit.v"
 `include "hazard_process.v"
