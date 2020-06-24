@@ -109,7 +109,7 @@ module Final_tb;
 	TestBed testbed(
 		.clk        (clk)           ,
 		.rst        (rst_n)         ,
-		.addr       (DCACHE_addr/4) ,
+		.addr       (DCACHE_addr) ,
 		.data       (DCACHE_wdata)  ,
 		.wen        (DCACHE_wen)    ,
 		.error_num  (error_num)     ,
