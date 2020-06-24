@@ -1,0 +1,57 @@
+ 
+****************************************
+Report : area
+Design : CHIP
+Version: N-2017.09-SP2
+Date   : Wed Jun 24 00:14:00 2020
+****************************************
+
+Library(s) Used:
+
+    typical (File: /home/raid7_2/course/cvsd/CBDK_IC_Contest/CIC/SynopsysDC/db/typical.db)
+
+Number of ports:                         2247
+Number of nets:                         21124
+Number of cells:                        17143
+Number of combinational cells:          12850
+Number of sequential cells:              4279
+Number of macros/black boxes:               0
+Number of buf/inv:                       2409
+Number of references:                       5
+
+Combinational area:             121966.678487
+Buf/Inv area:                    17933.031149
+Noncombinational area:          125167.973053
+Macro/Black Box area:                0.000000
+Net Interconnect area:         2552726.302582
+
+Total cell area:                247134.651540
+Total area:                    2799860.954121
+
+Hierarchical area distribution
+------------------------------
+
+                                  Global cell area              Local cell area
+                                  --------------------  -------------------------------- 
+Hierarchical cell                 Absolute     Percent  Combi-       Noncombi-    Black-
+                                  Total        Total    national     national     boxes   Design
+--------------------------------  -----------  -------  -----------  -----------  ------  -------------------------
+CHIP                              247134.6515    100.0      20.3688       0.0000  0.0000  CHIP
+D_cache                            74894.3807     30.3   37358.0774   37536.3033  0.0000  cache_0
+I_cache                            74821.3925     30.3   37285.0892   37536.3033  0.0000  cache_1
+i_RISCV                            97398.5095     39.4    5781.3444   12681.2755  0.0000  RISCV_Pipeline
+i_RISCV/ALU                        13681.0439      5.5    9760.0499       0.0000  0.0000  ALU
+i_RISCV/ALU/add_35                  1748.3220      0.7    1748.3220       0.0000  0.0000  ALU_DW01_add_0
+i_RISCV/ALU/sub_18                  2172.6720      0.9    2172.6720       0.0000  0.0000  ALU_DW01_sub_0
+i_RISCV/ALUCtrl                      135.7920      0.1     135.7920       0.0000  0.0000  ALUCtrl
+i_RISCV/Decoder                      118.8180      0.0     118.8180       0.0000  0.0000  Decoder
+i_RISCV/Imm_Gen                      344.5722      0.1     344.5722       0.0000  0.0000  Imm_Gen
+i_RISCV/PC                           381.9150      0.2      11.8818     370.0332  0.0000  PC
+i_RISCV/Registers                  62766.4574     25.4   25722.3996   37044.0577  0.0000  Registers
+i_RISCV/add_241                      465.0876      0.2     465.0876       0.0000  0.0000  RISCV_Pipeline_DW01_add_0
+i_RISCV/forwarding_unit              848.7000      0.3     848.7000       0.0000  0.0000  forwarding_unit
+i_RISCV/hazard_process               193.5036      0.1     193.5036       0.0000  0.0000  hazard_process
+--------------------------------  -----------  -------  -----------  -----------  ------  -------------------------
+Total                                                   121966.6785  125167.9731  0.0000
+
+1
