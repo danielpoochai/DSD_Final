@@ -18,8 +18,8 @@
 	`include "./TestBed_hasHazard.v"
 `endif	
 `ifdef BrPred
-	`define IMEM_INIT "I_mem_BrPred"
-	`include "./TestBed_BrPred.v"
+	`define IMEM_INIT "I_mem_BrPred_test"
+	`include "./TestBed_BrPred_test.v"
 `endif
 `ifdef compression
 	`define IMEM_INIT "I_mem_compression"
@@ -83,7 +83,8 @@ module Final_tb;
 				DCACHE_wdata,
 				DCACHE_wen,
 				branch,
-				correct
+				correct,
+				satll
 				);
 	
 	slow_memory slow_memD(
@@ -162,6 +163,7 @@ module Final_tb;
 	    begin
 	    	$display( "Total branch = ",total_branch);
 	    	$display( "Total miss = ", predict_miss);
+	    	$display( "Total cycle = ", total_cycle);
 	    	#(`CYCLE) $finish;	
 	    end	
 	end
@@ -169,13 +171,16 @@ module Final_tb;
 
 	integer total_branch = 0 ;
 	integer predict_miss = 0 ;
+	integer total_cycle  = 0 ;
 	always@(posedge clk)
 	begin
-		if (branch == 1 )
+		if (branch == 1 && satll == 0 )
 			total_branch = total_branch + 1 ;
 
-		if (correct == 0 )
+		if (correct == 0 && satll == 0 )
 			predict_miss = predict_miss + 1 ;
+
+		total_cycle = total_cycle + 1 ;
 	end
 	
 endmodule

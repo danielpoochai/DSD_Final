@@ -25,82 +25,28 @@ output reg correct ;
 output predict_jump ;
 input stall ;
 
-reg [1:0] state, state_nxt;
 reg [31:0] PC_add_4_n, PC_add_4_nxt ;
 reg [31:0] PC_add_imm_n, PC_add_imm_nxt ;
 reg predict_jump_n, predict_jump_nxt ;
 assign predict_jump = predict_jump_nxt;
 
-localparam take_1     = 2'b00; //jump
-localparam take_2     = 2'b01; //jump
-localparam not_take_1 = 2'b10; // not jump
-localparam not_take_2 = 2'b11; // not jump 
+localparam take     	= 2'b00; //jump
+localparam not_take     = 2'b01; //not jump
 
 // current state 
 always@(*) 
-begin
-	state_nxt = take_1 ; 
+begin 
 	correct = 1 ;
 	if ( branch_ID == 0 || stall == 1 )
 	begin
-		state_nxt = state ;
 		correct = 1 ;
 	end
-	else if (branch_ID == 1 )
+	else 
 	begin
-		//$display("state = 0x%2d" , state);
-		if (state == take_1)
-		begin
-			if (jump_or_not == 1) // jump
-			begin
-				state_nxt = take_1;
-			end
-			else 
-			begin
-				state_nxt = take_2;
-				correct = 0 ;
-			end
-		end
-		else if (state == take_2)
-		begin
-			if (jump_or_not == 1) // jump
-			begin
-				state_nxt = take_1;
-			end
-			else 
-			begin
-				state_nxt = not_take_2;
-				correct = 0 ;
-			end
-		end
-		else if (state == not_take_1) 
-		begin
-			if (jump_or_not == 1) // jump
-			begin
-				state_nxt = not_take_2;
-				correct = 0 ;
-			end
-			else 
-			begin
-				state_nxt = not_take_1;
-			end
-		end
-		else if (state == not_take_2) 
-		begin
-			if (jump_or_not == 1) // jump
-			begin
-				state_nxt = take_2;
-				correct = 0 ;
-			end
-			else 
-			begin
-				state_nxt = not_take_1;
-			end
-		end
+		if (predict_jump_n == jump_or_not )
+			correct = 1 ;
 		else 
-		begin
-			state_nxt = take_1;
-		end
+			correct = 0 ;
 	end
 end
 
@@ -115,19 +61,19 @@ begin
 	begin
 		PC_add_imm_nxt = PC_add_imm ;
 		PC_add_4_nxt = PC_add_4 ;
-		// reset
-		if (state == take_1 || state == take_2)
+
+		if ( PC_add_imm < PC_add_4)
 		begin
-			PC_out = PC_add_imm ;
 			predict_jump_nxt = 1 ;
+			PC_out = PC_add_imm ;
 		end
 		else 
 		begin
-			PC_out = PC_add_4;
 			predict_jump_nxt = 0 ;
+			PC_out = PC_add_4 ;
 		end
 	end
-	else if (branch_ID)
+	else if (branch_ID && stall != 1)
 	begin
 		predict_jump_nxt = 0 ;
 		if (correct) //predict correct 
@@ -158,14 +104,12 @@ begin
 	if (~rst_n) 
 	begin
 		// reset
-		state 			<= not_take_1 ;
 		PC_add_imm_n 	<= 0;
 		PC_add_4_n 		<= 0;
 		predict_jump_n  <= 0;
 	end
 	else
 	begin
-		state 			<= state_nxt ;
 		PC_add_imm_n 	<= PC_add_imm_nxt ;
 		PC_add_4_n 		<= PC_add_4_nxt ;
 		predict_jump_n  <= predict_jump_nxt ;

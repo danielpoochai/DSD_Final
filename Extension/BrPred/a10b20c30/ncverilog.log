@@ -1,0 +1,167 @@
+ncverilog: 15.20-s039: (c) Copyright 1995-2017 Cadence Design Systems, Inc.
+TOOL:	ncverilog	15.20-s039: Started on Jun 25, 2020 at 12:40:25 CST
+ncverilog
+	Final_tb.v
+	CHIP_prediction.v
+	slow_memory.v
+	+define+hasHazard
+	+access+r
+Recompiling... reason: file './CHIP_prediction.v' is newer than expected.
+	expected: Thu Jun 25 11:41:26 2020
+	actual:   Thu Jun 25 12:40:22 2020
+file: CHIP_prediction.v
+	module worklib.Branch_Prediction:v
+		errors: 0, warnings: 0
+		Caching library 'worklib' ....... Done
+	Elaborating the design hierarchy:
+		$readmemb (`DMEM_INIT, slow_memD.mem ); // initialize data in DMEM
+		                                   |
+ncelab: *W,MEMODR (./Final_tb.v,131|37): $readmem default memory order incompatible with IEEE1364.
+		$readmemh (`IMEM_INIT, slow_memI.mem ); // initialize data in IMEM
+		                                   |
+ncelab: *W,MEMODR (./Final_tb.v,132|37): $readmem default memory order incompatible with IEEE1364.
+	Building instance overlay tables: .................... Done
+	Generating native compiled code:
+		worklib.Branch_Prediction:v <0x364e4ab7>
+			streams:   5, words:  4693
+	Building instance specific data structures.
+	Loading native compiled code:     .................... Done
+	Design hierarchy summary:
+		                  Instances  Unique
+		Modules:                 17      15
+		Registers:              200     170
+		Scalar wires:            55       -
+		Vectored wires:          58       -
+		Always blocks:           45      39
+		Initial blocks:           4       4
+		Cont. assignments:       27      57
+		Pseudo assignments:       6       6
+		Simulation timescale:  10ps
+	Writing initial simulation snapshot: worklib.Final_tb:v
+Loading snapshot worklib.Final_tb:v .................... Done
+*Verdi* Loading libsscore_ius152.so
+ncsim> source /usr/cad/cadence/INCISIV/cur/tools/inca/files/ncsimrc
+ncsim> run
+-----------------------------------------------------
+
+START!!! Simulation Start .....
+
+-----------------------------------------------------
+
+FSDB Dumper for IUS, Release Verdi_N-2017.12, Linux, 11/12/2017
+(C) 1996 - 2017 by Synopsys, Inc.
+*Verdi* FSDB WARNING: The FSDB file already exists. Overwriting the FSDB file may crash the programs that are using this file.
+*Verdi* : Create FSDB file 'Final.fsdb'
+*Verdi* : Begin traversing the scope (Final_tb), layer (0).
+*Verdi* : Enable +mda dumping.
+*Verdi* : End of traversing.
+*Verdi* : Begin traversing the scopes, layer (0).
+*Verdi* : End of traversing.
+  Addr = 0xff  Correct ans: 0x00000000  Your ans: 0x00000000 AT time: 84500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 95500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 95500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000001 AT time: 95500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 126500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 126500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000001 AT time: 126500
+  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000000 AT time: 154500
+  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000000 AT time: 154500
+  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000002 AT time: 154500
+  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000000 AT time: 182500
+  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000000 AT time: 182500
+  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000003 AT time: 182500
+  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000000 AT time: 204500
+  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000000 AT time: 204500
+  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000005 AT time: 204500
+  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000000 AT time: 226500
+  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000000 AT time: 226500
+  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000008 AT time: 226500
+  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x00000000 AT time: 248500
+  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x00000000 AT time: 248500
+  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x0000000d AT time: 248500
+  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000000 AT time: 275500
+  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000000 AT time: 275500
+  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000015 AT time: 275500
+  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000000 AT time: 297500
+  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000000 AT time: 297500
+  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000022 AT time: 297500
+  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000000 AT time: 319500
+  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000000 AT time: 319500
+  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000037 AT time: 319500
+  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000000 AT time: 341500
+  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000000 AT time: 341500
+  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000059 AT time: 341500
+  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000000 AT time: 368500
+  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000000 AT time: 368500
+  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000090 AT time: 368500
+  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x00000000 AT time: 390500
+  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x00000000 AT time: 390500
+  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x000000e9 AT time: 390500
+  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000000 AT time: 412500
+  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000000 AT time: 412500
+  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000179 AT time: 412500
+  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000000 AT time: 434500
+  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000000 AT time: 434500
+  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000262 AT time: 434500
+  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000000 AT time: 2955500
+  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000000 AT time: 2955500
+  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000262 AT time: 2955500
+  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000000 AT time: 2974500
+  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000000 AT time: 2974500
+  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000179 AT time: 2974500
+  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x00000000 AT time: 2988500
+  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x00000000 AT time: 2988500
+  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x000000e9 AT time: 2988500
+  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000000 AT time: 3001500
+  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000000 AT time: 3001500
+  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000090 AT time: 3001500
+  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000000 AT time: 3014500
+  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000000 AT time: 3014500
+  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000059 AT time: 3014500
+  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000000 AT time: 3027500
+  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000000 AT time: 3027500
+  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000037 AT time: 3027500
+  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000000 AT time: 3040500
+  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000000 AT time: 3040500
+  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000022 AT time: 3040500
+  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000000 AT time: 3053500
+  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000000 AT time: 3053500
+  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000015 AT time: 3053500
+  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x00000000 AT time: 3066500
+  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x00000000 AT time: 3066500
+  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x0000000d AT time: 3066500
+  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000000 AT time: 3079500
+  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000000 AT time: 3079500
+  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000008 AT time: 3079500
+  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000000 AT time: 3092500
+  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000000 AT time: 3092500
+  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000005 AT time: 3092500
+  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000000 AT time: 3105500
+  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000000 AT time: 3105500
+  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000003 AT time: 3105500
+  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000000 AT time: 3118500
+  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000000 AT time: 3118500
+  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000002 AT time: 3118500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 3131500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 3131500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000001 AT time: 3131500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 3144500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 3144500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000001 AT time: 3144500
+  Addr = 0xff  Correct ans: 0x00000000  Your ans: 0x00000000 AT time: 3157500
+  Addr = 0xff  Correct ans: 0xfffffd5d  Your ans: 0x00000000 AT time: 3178500
+  Addr = 0xff  Correct ans: 0xfffffd5d  Your ans: 0x00000000 AT time: 3178500
+  Addr = 0xff  Correct ans: 0xfffffd5d  Your ans: 0xfffffd5d AT time: 3178500
+Total branch =         285
+Total miss =         140
+Total cycle =        3181
+--------------------------- Simulation FINISH !!---------------------------
+============================================================================
+
+ \(^o^)/ CONGRATULATIONS!!  The simulation result is PASS!!!
+
+============================================================================
+Simulation complete via $finish(1) at time 31815 NS + 0
+./Final_tb.v:167 	    	#(`CYCLE) $finish;	
+ncsim> exit
+TOOL:	ncverilog	15.20-s039: Exiting on Jun 25, 2020 at 12:40:26 CST  (total: 00:00:01)

@@ -43,7 +43,7 @@ begin
 	end
 	else 
 	begin
-		if (jump_or_not == 1 )
+		if (predict_jump_n == jump_or_not )
 			correct = 1 ;
 		else 
 			correct = 0 ;
@@ -65,7 +65,7 @@ begin
 		predict_jump_nxt = 1 ;
 		PC_out = PC_add_imm ;
 	end
-	else if (branch_ID)
+	else if (branch_ID && stall != 1)
 	begin
 		predict_jump_nxt = 0 ;
 		if (correct) //predict correct 
@@ -86,7 +86,7 @@ begin
 	else 
 	begin
 		PC_out = PC_add_4 ;
-		predict_jump_nxt = 0 ;
+		predict_jump_nxt = predict_jump_n ;
 	end
 end
 

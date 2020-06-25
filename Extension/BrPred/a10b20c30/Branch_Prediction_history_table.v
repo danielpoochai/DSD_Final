@@ -24,83 +24,77 @@ output reg [31:0] PC_out; 	// output signal ask the module to jump
 output reg correct ;
 output predict_jump ;
 input stall ;
+integer i ;
 
-reg [1:0] state, state_nxt;
 reg [31:0] PC_add_4_n, PC_add_4_nxt ;
 reg [31:0] PC_add_imm_n, PC_add_imm_nxt ;
 reg predict_jump_n, predict_jump_nxt ;
 assign predict_jump = predict_jump_nxt;
+reg in_table, in_table_nxt;
+reg [3:0] table_index, table_index_nxt ;
 
-localparam take_1     = 2'b00; //jump
-localparam take_2     = 2'b01; //jump
-localparam not_take_1 = 2'b10; // not jump
-localparam not_take_2 = 2'b11; // not jump 
+reg [36:0] history_table [15:0];
+reg [36:0] history_table_nxt [15:0];
+reg [3:0] counter, counter_nxt ;
 
-// current state 
-always@(*) 
+always@(*)
 begin
-	state_nxt = take_1 ; 
-	correct = 1 ;
-	if ( branch_ID == 0 || stall == 1 )
+	in_table_nxt = in_table ;	
+	predict_jump_nxt = predict_jump_n ;  // default is to jump 
+	for(i = 0; i<=15; i = i+1) 
 	begin
-		state_nxt = state ;
-		correct = 1 ;
+		history_table_nxt[i] = history_table[i] ;
 	end
-	else if (branch_ID == 1 )
+	counter_nxt = counter ;
+	table_index_nxt = table_index ; 
+
+	if (branch_IF && stall != 1) // read table
 	begin
-		//$display("state = 0x%2d" , state);
-		if (state == take_1)
+		in_table_nxt = 0 ;
+		predict_jump_nxt = 1 ;
+		for(i = 0; i<=15; i = i+1) 
 		begin
-			if (jump_or_not == 1) // jump
+			if (history_table[i][32:1] == (PC_add_4)  )
 			begin
-				state_nxt = take_1;
-			end
-			else 
-			begin
-				state_nxt = take_2;
-				correct = 0 ;
+				in_table_nxt = 1 ;
+				table_index_nxt = i ;
+				if (history_table[i][0] == 1'b1 )
+					predict_jump_nxt = 1 ;
+				else 
+				begin
+					predict_jump_nxt = 0 ;	
+				end
 			end
 		end
-		else if (state == take_2)
+	end
+	else if (branch_ID && stall != 1) // write table
+	begin
+		if (in_table == 0) // need to write
 		begin
-			if (jump_or_not == 1) // jump
-			begin
-				state_nxt = take_1;
-			end
-			else 
-			begin
-				state_nxt = not_take_2;
-				correct = 0 ;
-			end
-		end
-		else if (state == not_take_1) 
-		begin
-			if (jump_or_not == 1) // jump
-			begin
-				state_nxt = not_take_2;
-				correct = 0 ;
-			end
-			else 
-			begin
-				state_nxt = not_take_1;
-			end
-		end
-		else if (state == not_take_2) 
-		begin
-			if (jump_or_not == 1) // jump
-			begin
-				state_nxt = take_2;
-				correct = 0 ;
-			end
-			else 
-			begin
-				state_nxt = not_take_1;
-			end
+			history_table_nxt[counter] = {{counter}, {PC_add_4_n}, jump_or_not};
+			counter_nxt = counter + 1 ;
 		end
 		else 
 		begin
-			state_nxt = take_1;
+			history_table_nxt[table_index][0] = jump_or_not ;
 		end
+	end
+end
+
+// current state 
+always @(*) 
+begin 
+	correct = 1 ;
+	if ( branch_ID == 0 || stall == 1 )
+	begin
+		correct = 1 ;
+	end
+	else 
+	begin
+		if (predict_jump_n == jump_or_not )
+			correct = 1 ;
+		else 
+			correct = 0 ;
 	end
 end
 
@@ -110,26 +104,22 @@ begin
 	PC_add_imm_nxt = PC_add_imm_n ;
 	PC_add_4_nxt = PC_add_4_n ; 
 	PC_out = 0 ;
-	predict_jump_nxt = predict_jump_n ;
+	//predict_jump_nxt = predict_jump_n ;
 	if (branch_IF && stall != 1 )  // Beq have the chances to jump
 	begin
 		PC_add_imm_nxt = PC_add_imm ;
 		PC_add_4_nxt = PC_add_4 ;
-		// reset
-		if (state == take_1 || state == take_2)
-		begin
+
+		if (predict_jump_nxt == 1) 
 			PC_out = PC_add_imm ;
-			predict_jump_nxt = 1 ;
-		end
 		else 
 		begin
-			PC_out = PC_add_4;
-			predict_jump_nxt = 0 ;
+			PC_out = PC_add_4 ;	
 		end
 	end
-	else if (branch_ID)
+	else if (branch_ID && stall != 1)
 	begin
-		predict_jump_nxt = 0 ;
+		//predict_jump_nxt = 0 ;
 		if (correct) //predict correct 
 		begin
 			if (predict_jump_n == 1)
@@ -148,7 +138,7 @@ begin
 	else 
 	begin
 		PC_out = PC_add_4 ;
-		predict_jump_nxt = predict_jump_n ;
+		//predict_jump_nxt = predict_jump_n ;
 	end
 end
 
@@ -158,17 +148,27 @@ begin
 	if (~rst_n) 
 	begin
 		// reset
-		state 			<= not_take_1 ;
+		for(i = 0; i<=15; i = i+1) begin
+            history_table[i]  <= 154'd0;
+        end
 		PC_add_imm_n 	<= 0;
 		PC_add_4_n 		<= 0;
 		predict_jump_n  <= 0;
+		counter 		<= 0;
+		in_table 		<= 0;
+		table_index     <= 0 ;
 	end
 	else
 	begin
-		state 			<= state_nxt ;
+		for(i = 0; i<=15; i = i+1) begin
+            history_table[i]  <= history_table_nxt[i];
+        end
 		PC_add_imm_n 	<= PC_add_imm_nxt ;
 		PC_add_4_n 		<= PC_add_4_nxt ;
 		predict_jump_n  <= predict_jump_nxt ;
+		counter 		<= counter_nxt ;
+		in_table 		<= in_table_nxt ;
+		table_index     <= table_index_nxt ;
 	end
 end
 

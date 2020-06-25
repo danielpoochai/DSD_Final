@@ -121,7 +121,7 @@ begin
 	else 
 	begin
 		PC_out = PC_add_4 ;
-		predict_jump_nxt = 0 ;
+		predict_jump_nxt = predict_jump_n ;
 	end
 end
 

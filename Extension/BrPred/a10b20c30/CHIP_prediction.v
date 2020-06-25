@@ -31,6 +31,7 @@ module CHIP (   clk,
                 DCACHE_wen, 
                 branch,
                 correct,
+                stall
             );
 input           clk, rst_n;
 //--------------------------
@@ -52,7 +53,8 @@ output  [29:0]  DCACHE_addr;
 output  [31:0]  DCACHE_wdata;
 output          DCACHE_wen;
 //--------------------------
-output branch, correct ;
+output branch, correct , stall;
+
 
 // wire declaration
 wire        ICACHE_ren;
@@ -69,6 +71,7 @@ wire [31:0] DCACHE_wdata;
 wire        DCACHE_stall;
 wire [31:0] DCACHE_rdata;
 
+assign stall = ICACHE_stall || DCACHE_stall ;
 //=========================================
     // Note that the overall design of your RISCV includes:
     // 1. pipelined RISCV processor
@@ -238,7 +241,7 @@ module RISCV_Pipeline(
 
     assign immediate_IF     = {{20{instruction_n[31]}}, {instruction_n[7]}, {instruction_n[30:25]}, {instruction_n[11:8]}, {1'b0}} ;
     assign PC_add_imm_IF    = pc_out + immediate_IF ;
-    assign branch_IF        = ( instruction_n[6:0] == 7'b1100011 ) ; 
+    assign branch_IF        = ( instruction_n[6:0] == 7'b1100011 && !ICACHE_stall && !DCACHE_stall) ; 
 
 
     assign ICACHE_ren   = (jal || jalr)? 1'd0: 1'd1;
@@ -248,7 +251,7 @@ module RISCV_Pipeline(
     // DCACHE_assignment
     assign DCACHE_ren   = memread_mem;
     assign DCACHE_wen   = memwrite_mem;
-    assign DCACHE_addr  = alu_result_mem[31:0];
+    assign DCACHE_addr  = alu_result_mem[31:2];
     assign DCACHE_wdata = {{rs2_data_mem[7:0]},{rs2_data_mem[15:8]},{rs2_data_mem[23:16]},{rs2_data_mem[31:24]}}; 
 
 
