@@ -280,9 +280,20 @@ module RISCV_Pipeline(
     	else 
     	begin
     		if (is_compress == 0 )
-    			pc_mux = pc-2;
+    		begin
+    			if (branch_or_not)
+    				pc_mux = pc - 4;
+    			else 
+    				pc_mux = pc - 2;
+    		end
     		else
-    			pc_mux = pc;
+    		begin
+    			if (branch_or_not)
+    				pc_mux = pc - 2;
+    			else 
+    				pc_mux = pc;
+    		end
+ 
     	end
     end
     

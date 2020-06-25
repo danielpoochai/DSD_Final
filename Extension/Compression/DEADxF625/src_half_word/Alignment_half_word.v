@@ -38,7 +38,7 @@ module Alignment(
 	//assignment output
 	assign instruction_o= instruction_w;
 	assign is_compress_o= is_compress_w;
-	assign instruction_i= { cache_input[7:0], cache_input[15:8] } ;
+	assign instruction_i= { cache_input[7:0], cache_input[15:8]};
 	assign orig_instr 	= orig_instr_reg;
 
 	//Decompressor
@@ -59,11 +59,12 @@ module Alignment(
 			is_compress_w 	= is_compress_r;
 			//align_stall_w 	= 0;
 		end
-		else if(jump) begin
+		else if(jump) 
+		begin
 			buffer_w 		= 0;
 			//counter_w 		= 0;
 			with_buffer_w 	= 0;
-			is_compress_w 	= 0;
+			is_compress_w 	= is_compress_r;
 		end
 		else 
 		begin
@@ -96,7 +97,7 @@ module Alignment(
 						instruction_w 	= 32'd0;
 						buffer_w 		= instruction_i;
 						with_buffer_w 	= 1'b1;
-						is_compress_w 	= 1'b1;
+						is_compress_w 	= is_compress_r;
 						// counter_w 		= counter_r ;
 					end
 					else begin //compressed instruction 

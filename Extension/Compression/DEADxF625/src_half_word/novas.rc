@@ -110,6 +110,8 @@ FSM = 1
 Branch = 1
 [DesignTree]
 IfShowModule = {TRUE, FALSE}
+[DisabledMessages]
+version = Verdi_N-2017.12
 [Editor]
 editorName = TurboEditor
 [Emacs]
@@ -196,6 +198,8 @@ StickSet-FillColor = purple6
 StickSet-TextColor = black
 [FSM_Dlg-Print]
 Orientation = Landscape
+[FileBrowser]
+nWaveOpenFsdbDirHistory = "\"/home/raid7_2/userb06/b06167/DSD_Final/Extension/Compression/DEADxF625/src_half_word/Final.fsdb\""
 [Form]
 version = Verdi_N-2017.12
 [General]
@@ -302,6 +306,11 @@ PrinterName = lp
 FileName = test.ps
 PaperSize = A4 - 210x297 (mm)
 ColorPrint = FALSE
+[QtDialog]
+QwQuestionMsgDlg = 596,328,324,110
+openFileDlg = 467,182,602,483
+QwWarnMsgDlg = 458,267,600,250
+qWaveSignalDialog = 368,184,981,479
 [Session Cache]
 1 = string (session file name)
 2 = string (session file name)
@@ -509,8 +518,11 @@ ovaForbidSuccessColor = -c ID_GREEN5
 SigGroupRuleFile = 
 DisplayFileName = FALSE
 waveform_vertical_scroll_bar = TRUE
-getSignalForm = 0 0 800 479 100 30 100 30
-viewPort = 54 237 960 332 100 65
+scope_to_save_with_macro
+open_file_dir
+open_rc_file_dir
+getSignalForm = 368 184 981 479 216 381 515 89
+viewPort = 8 31 183 845 175 1
 signalSpacing = 5
 digitalSignalHeight = 15
 analogSignalHeight = 98
@@ -570,6 +582,7 @@ analogVoltageStyle = pwl
 analogCurrentStyle = pwl
 analogOthersStyle = pwl
 busSignalLayer = -c ID_ORANGE8
+busXLayer = -c ID_RED5
 busZLayer = -c ID_ORANGE6
 busMixedLayer = -c ID_GREEN5
 busNotComputedLayer = -c ID_GRAY1
@@ -697,7 +710,6 @@ ResolveSymbolicLink = TRUE
 signal_rc_abspath = TRUE
 signal_rc_no_natural_bus_range = FALSE
 save_scope_with_macro = FALSE
-scope_to_save_with_macro
 TipInSignalWin = FALSE
 DisplaySignalTypeAheadOfSignalName = TRUE ICON
 TipInCurveWin = FALSE
@@ -771,9 +783,8 @@ curveWindow_Drag&Drop_Mode = TRUE
 hspiceIncOpenMode = TRUE
 pcSelectMode = TRUE
 hierarchyDelimiter = /
+RecentFile1 = "\"/home/raid7_2/userb06/b06167/DSD_Final/Extension/Compression/DEADxF625/src_half_word/Final.fsdb\""
 open_file_time_range = FALSE
-open_file_dir
-open_rc_file_dir
 value_window_aligment = Right
 signal_window_alignment = Auto
 ShowDeltaTime = TRUE

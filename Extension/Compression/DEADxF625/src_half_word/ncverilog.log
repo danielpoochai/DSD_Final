@@ -1,12 +1,17 @@
 ncverilog: 15.20-s039: (c) Copyright 1995-2017 Cadence Design Systems, Inc.
-TOOL:	ncverilog	15.20-s039: Started on Jun 25, 2020 at 18:49:09 CST
+TOOL:	ncverilog	15.20-s039: Started on Jun 26, 2020 at 00:13:14 CST
 ncverilog
 	Final_tb.v
-	CHIP_compress.v
+	CHIP_half_word.v
 	slow_memory.v
 	+define+hasHazard
 	+access+r
-file: CHIP_compress.v
+file: Final_tb.v
+	module worklib.TestBed:v
+		errors: 0, warnings: 0
+	module worklib.Final_tb:v
+		errors: 0, warnings: 0
+file: CHIP_half_word.v
 	module worklib.Decoder:v
 		errors: 0, warnings: 0
 	module worklib.ALUCtrl:v
@@ -17,9 +22,9 @@ file: CHIP_compress.v
 		errors: 0, warnings: 0
 	module worklib.Imm_Gen:v
 		errors: 0, warnings: 0
-	module worklib.cache:v
+	module worklib.cache_half_word:v
 		errors: 0, warnings: 0
-	module worklib.cache_rd:v
+	module worklib.cache:v
 		errors: 0, warnings: 0
 	module worklib.Branch_Prediction:v
 		errors: 0, warnings: 0
@@ -39,8 +44,17 @@ file: CHIP_compress.v
 		errors: 0, warnings: 0
 	module worklib.RISCV_Pipeline:v
 		errors: 0, warnings: 0
+file: slow_memory.v
+	module worklib.slow_memory:v
+		errors: 0, warnings: 0
 		Caching library 'worklib' ....... Done
 	Elaborating the design hierarchy:
+		.ICACHE_rdata   (ICACHE_rdata)  ,
+		                            |
+ncelab: *W,CUVMPW (./CHIP_half_word.v,88|30): port sizes differ in port connection (32/16).
+        .proc_rdata (ICACHE_rdata),
+                                |
+ncelab: *W,CUVMPW (./CHIP_half_word.v,122|32): port sizes differ in port connection (32/16).
 		$readmemb (`DMEM_INIT, slow_memD.mem ); // initialize data in DMEM
 		                                   |
 ncelab: *W,MEMODR (./Final_tb.v,128|37): $readmem default memory order incompatible with IEEE1364.
@@ -53,42 +67,49 @@ ncelab: *W,MEMODR (./Final_tb.v,129|37): $readmem default memory order incompati
 			streams:   3, words:  1202
 		worklib.ALUCtrl:v <0x286f6c3d>
 			streams:   1, words:  1382
-		worklib.Alignment:v <0x68fc8f2c>
-			streams:   5, words:  4717
+		worklib.Alignment:v <0x4f1b5735>
+			streams:   5, words:  3392
 		worklib.Branch_Prediction:v <0x2ae23583>
 			streams:   4, words:  1338
-		worklib.CHIP:v <0x78e60ba7>
+		worklib.CHIP:v <0x093c0e0d>
 			streams:   1, words:   101
 		worklib.Decoder:v <0x3a5e6962>
 			streams:   1, words:  7120
 		worklib.Decompressor:v <0x76a33f1d>
 			streams:   1, words:  9958
+		worklib.Final_tb:v <0x73ae9b9b>
+			streams:   3, words:  5314
 		worklib.Imm_Gen:v <0x3be55abf>
 			streams:   2, words:  3966
 		worklib.PC:v <0x69406339>
 			streams:   3, words:   593
 		worklib.PC_trunc:v <0x33b3fdcb>
 			streams:   3, words:   571
-		worklib.RISCV_Pipeline:v <0x097fbe4f>
-			streams:  35, words: 26824
+		worklib.RISCV_Pipeline:v <0x61f703ab>
+			streams:  35, words: 27028
 		worklib.Registers:v <0x6944fe9c>
 			streams:   6, words: 14499
+		worklib.TestBed:v <0x2f985ff9>
+			streams:  11, words:  9326
 		worklib.cache:v <0x11dce19a>
 			streams:   9, words: 61766
-		worklib.cache_rd:v <0x7dd33622>
-			streams:  10, words: 33390
+		worklib.cache_half_word:v <0x4f6c63e9>
+			streams:  10, words: 52013
 		worklib.forwarding_unit:v <0x037cd862>
 			streams:   2, words:  2275
 		worklib.hazard_process:v <0x1c027371>
 			streams:   1, words:  1485
+		worklib.slow_memory:v <0x51cb4827>
+			streams:   7, words:  5124
 	Building instance specific data structures.
 	Loading native compiled code:     .................... Done
 	Design hierarchy summary:
 		                  Instances  Unique
 		Modules:                 20      19
-		Registers:              205     192
+		Registers:              201     188
 		Scalar wires:            54       -
-		Vectored wires:          59       -
+		Expanded wires:          16       1
+		Vectored wires:          58       -
 		Always blocks:           48      44
 		Initial blocks:           1       1
 		Cont. assignments:       26      68
@@ -114,108 +135,108 @@ FSDB Dumper for IUS, Release Verdi_N-2017.12, Linux, 11/12/2017
 *Verdi* : End of traversing.
 *Verdi* : Begin traversing the scopes, layer (0).
 *Verdi* : End of traversing.
-  Addr = 0xff  Correct ans: 0x00000000  Your ans: 0x00000000 AT time: 89500
-  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 100500
-  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 100500
-  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000001 AT time: 100500
-  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 131500
-  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 131500
-  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000001 AT time: 131500
-  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000000 AT time: 160500
-  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000000 AT time: 160500
-  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000002 AT time: 160500
-  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000000 AT time: 189500
-  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000000 AT time: 189500
-  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000003 AT time: 189500
-  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000000 AT time: 213500
-  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000000 AT time: 213500
-  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000005 AT time: 213500
-  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000000 AT time: 237500
-  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000000 AT time: 237500
-  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000008 AT time: 237500
-  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x00000000 AT time: 261500
-  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x00000000 AT time: 261500
-  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x0000000d AT time: 261500
-  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000000 AT time: 290500
-  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000000 AT time: 290500
-  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000015 AT time: 290500
-  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000000 AT time: 314500
-  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000000 AT time: 314500
-  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000022 AT time: 314500
-  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000000 AT time: 338500
-  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000000 AT time: 338500
-  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000037 AT time: 338500
-  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000000 AT time: 362500
-  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000000 AT time: 362500
-  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000059 AT time: 362500
-  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000000 AT time: 391500
-  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000000 AT time: 391500
-  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000090 AT time: 391500
-  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x00000000 AT time: 415500
-  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x00000000 AT time: 415500
-  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x000000e9 AT time: 415500
-  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000000 AT time: 439500
-  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000000 AT time: 439500
-  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000179 AT time: 439500
-  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000000 AT time: 463500
-  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000000 AT time: 463500
-  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000262 AT time: 463500
-  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000000 AT time: 3097500
-  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000000 AT time: 3097500
-  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000262 AT time: 3097500
-  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000000 AT time: 3117500
-  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000000 AT time: 3117500
-  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000179 AT time: 3117500
-  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x00000000 AT time: 3132500
-  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x00000000 AT time: 3132500
-  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x000000e9 AT time: 3132500
-  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000000 AT time: 3147500
-  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000000 AT time: 3147500
-  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000090 AT time: 3147500
-  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000000 AT time: 3162500
-  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000000 AT time: 3162500
-  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000059 AT time: 3162500
-  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000000 AT time: 3177500
-  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000000 AT time: 3177500
-  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000037 AT time: 3177500
-  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000000 AT time: 3192500
-  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000000 AT time: 3192500
-  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000022 AT time: 3192500
-  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000000 AT time: 3207500
-  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000000 AT time: 3207500
-  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000015 AT time: 3207500
-  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x00000000 AT time: 3222500
-  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x00000000 AT time: 3222500
-  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x0000000d AT time: 3222500
-  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000000 AT time: 3237500
-  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000000 AT time: 3237500
-  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000008 AT time: 3237500
-  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000000 AT time: 3252500
-  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000000 AT time: 3252500
-  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000005 AT time: 3252500
-  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000000 AT time: 3267500
-  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000000 AT time: 3267500
-  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000003 AT time: 3267500
-  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000000 AT time: 3282500
-  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000000 AT time: 3282500
-  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000002 AT time: 3282500
-  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 3297500
-  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 3297500
-  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000001 AT time: 3297500
-  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 3312500
-  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 3312500
-  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000001 AT time: 3312500
-  Addr = 0xff  Correct ans: 0x00000000  Your ans: 0x00000000 AT time: 3327500
-  Addr = 0xff  Correct ans: 0xfffffd5d  Your ans: 0x00000000 AT time: 3342500
-  Addr = 0xff  Correct ans: 0xfffffd5d  Your ans: 0x00000000 AT time: 3342500
-  Addr = 0xff  Correct ans: 0xfffffd5d  Your ans: 0xfffffd5d AT time: 3342500
+  Addr = 0xff  Correct ans: 0x00000000  Your ans: 0x00000000 AT time: 98500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 113500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 113500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000001 AT time: 113500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 153500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 153500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000001 AT time: 153500
+  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000000 AT time: 192500
+  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000000 AT time: 192500
+  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000002 AT time: 192500
+  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000000 AT time: 231500
+  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000000 AT time: 231500
+  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000003 AT time: 231500
+  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000000 AT time: 265500
+  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000000 AT time: 265500
+  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000005 AT time: 265500
+  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000000 AT time: 299500
+  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000000 AT time: 299500
+  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000008 AT time: 299500
+  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x00000000 AT time: 333500
+  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x00000000 AT time: 333500
+  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x0000000d AT time: 333500
+  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000000 AT time: 372500
+  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000000 AT time: 372500
+  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000015 AT time: 372500
+  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000000 AT time: 406500
+  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000000 AT time: 406500
+  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000022 AT time: 406500
+  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000000 AT time: 440500
+  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000000 AT time: 440500
+  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000037 AT time: 440500
+  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000000 AT time: 474500
+  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000000 AT time: 474500
+  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000059 AT time: 474500
+  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000000 AT time: 513500
+  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000000 AT time: 513500
+  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000090 AT time: 513500
+  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x00000000 AT time: 547500
+  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x00000000 AT time: 547500
+  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x000000e9 AT time: 547500
+  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000000 AT time: 581500
+  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000000 AT time: 581500
+  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000179 AT time: 581500
+  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000000 AT time: 615500
+  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000000 AT time: 615500
+  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000262 AT time: 615500
+  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000000 AT time: 4144500
+  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000000 AT time: 4144500
+  Addr = 0xff  Correct ans: 0x00000262  Your ans: 0x00000262 AT time: 4144500
+  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000000 AT time: 4170500
+  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000000 AT time: 4170500
+  Addr = 0xff  Correct ans: 0x00000179  Your ans: 0x00000179 AT time: 4170500
+  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x00000000 AT time: 4191500
+  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x00000000 AT time: 4191500
+  Addr = 0xff  Correct ans: 0x000000e9  Your ans: 0x000000e9 AT time: 4191500
+  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000000 AT time: 4212500
+  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000000 AT time: 4212500
+  Addr = 0xff  Correct ans: 0x00000090  Your ans: 0x00000090 AT time: 4212500
+  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000000 AT time: 4233500
+  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000000 AT time: 4233500
+  Addr = 0xff  Correct ans: 0x00000059  Your ans: 0x00000059 AT time: 4233500
+  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000000 AT time: 4254500
+  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000000 AT time: 4254500
+  Addr = 0xff  Correct ans: 0x00000037  Your ans: 0x00000037 AT time: 4254500
+  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000000 AT time: 4275500
+  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000000 AT time: 4275500
+  Addr = 0xff  Correct ans: 0x00000022  Your ans: 0x00000022 AT time: 4275500
+  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000000 AT time: 4296500
+  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000000 AT time: 4296500
+  Addr = 0xff  Correct ans: 0x00000015  Your ans: 0x00000015 AT time: 4296500
+  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x00000000 AT time: 4317500
+  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x00000000 AT time: 4317500
+  Addr = 0xff  Correct ans: 0x0000000d  Your ans: 0x0000000d AT time: 4317500
+  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000000 AT time: 4338500
+  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000000 AT time: 4338500
+  Addr = 0xff  Correct ans: 0x00000008  Your ans: 0x00000008 AT time: 4338500
+  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000000 AT time: 4359500
+  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000000 AT time: 4359500
+  Addr = 0xff  Correct ans: 0x00000005  Your ans: 0x00000005 AT time: 4359500
+  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000000 AT time: 4380500
+  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000000 AT time: 4380500
+  Addr = 0xff  Correct ans: 0x00000003  Your ans: 0x00000003 AT time: 4380500
+  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000000 AT time: 4401500
+  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000000 AT time: 4401500
+  Addr = 0xff  Correct ans: 0x00000002  Your ans: 0x00000002 AT time: 4401500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 4422500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 4422500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000001 AT time: 4422500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 4443500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000000 AT time: 4443500
+  Addr = 0xff  Correct ans: 0x00000001  Your ans: 0x00000001 AT time: 4443500
+  Addr = 0xff  Correct ans: 0x00000000  Your ans: 0x00000000 AT time: 4464500
+  Addr = 0xff  Correct ans: 0xfffffd5d  Your ans: 0x00000000 AT time: 4486500
+  Addr = 0xff  Correct ans: 0xfffffd5d  Your ans: 0x00000000 AT time: 4486500
+  Addr = 0xff  Correct ans: 0xfffffd5d  Your ans: 0xfffffd5d AT time: 4486500
 --------------------------- Simulation FINISH !!---------------------------
 ============================================================================
 
  \(^o^)/ CONGRATULATIONS!!  The simulation result is PASS!!!
 
 ============================================================================
-Simulation complete via $finish(1) at time 33455 NS + 0
+Simulation complete via $finish(1) at time 44895 NS + 0
 ./Final_tb.v:159 	       #(`CYCLE) $finish;		   
 ncsim> exit
-TOOL:	ncverilog	15.20-s039: Exiting on Jun 25, 2020 at 18:49:11 CST  (total: 00:00:02)
+TOOL:	ncverilog	15.20-s039: Exiting on Jun 26, 2020 at 00:13:20 CST  (total: 00:00:06)
