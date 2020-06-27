@@ -70,10 +70,11 @@ module cache_read(
         case(state_r) 
             IDLE:
             begin
-
                 if(tag == tag_in_cache) begin //25 bits 
                     if(valid_in_cache) begin
+
                         proc_stall_w    = 1'd0;
+            
                         case(proc_addr[1:0]) 
                             2'd3: proc_rdata = cache_r[index][127:96]; //word0
                             2'd2: proc_rdata = cache_r[index][95:64];  //word1 
@@ -88,8 +89,8 @@ module cache_read(
                             proc_rdata   = L2_rdata_I;
                         end
                         else begin
-                            state_w         = READ_STALL;
                             proc_stall_w    = 1'd1;
+                            state_w         = READ_STALL;
                             //update valid bit
                             cache_w[index][153] = 1'd1;
                         end    
@@ -101,8 +102,8 @@ module cache_read(
                             proc_rdata   = L2_rdata_I;
                         end
                         else begin
-                            state_w         = READ_STALL;
                             proc_stall_w    = 1'd1;
+                            state_w         = READ_STALL;
                             //update valid bit
                             cache_w[index][153] = 1'd1;
                         end

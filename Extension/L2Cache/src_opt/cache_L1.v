@@ -82,7 +82,9 @@ module cache(
                 if(tag == tag_in_cache) begin //25 bits 
                     if(valid_in_cache) begin
                         if(proc_read) begin  // read hit
+
                             proc_stall_w = 1'd0;
+            
                             case(proc_addr[1:0]) 
                                 2'd3: proc_rdata = cache_r[index][127:96]; //word0
                                 2'd2: proc_rdata = cache_r[index][95:64];  //word1 
@@ -92,20 +94,18 @@ module cache(
                             endcase
                         end
                         if(proc_write) begin //write hit
-                            if(L2_ready) begin
-                                proc_stall_w = 1'd0;
+                            if(L2_ready) begin 
+                                proc_stall_w = 1'd0; 
+                                case(proc_addr[1:0])
+                                    2'd3: cache_w[index][127:96]= proc_wdata;
+                                    2'd2: cache_w[index][95:64] = proc_wdata; 
+                                    2'd1: cache_w[index][63:32] = proc_wdata;
+                                    2'd0: cache_w[index][31:0]  = proc_wdata;
+                                    default: cache_w[index]     = cache_r[0];
+                                endcase
                             end
-                            else begin
-                                proc_stall_w = 1'd1;
-                            end
+                            else proc_stall_w = 1'd1;
                             //update data in cache
-                            case(proc_addr[1:0])
-                                2'd3: cache_w[index][127:96]= proc_wdata;
-                                2'd2: cache_w[index][95:64] = proc_wdata; 
-                                2'd1: cache_w[index][63:32] = proc_wdata;
-                                2'd0: cache_w[index][31:0]  = proc_wdata;
-                                default: cache_w[index]     = cache_r[0];
-                            endcase
                         end
                     end
                     else begin              //not valid 
