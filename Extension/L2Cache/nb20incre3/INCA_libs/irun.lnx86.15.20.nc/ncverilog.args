@@ -1,0 +1,9 @@
+//
+// File created by:  ncverilog
+// Do not modify this file
+//
+Final_tb.v
+CHIP_opt.v
+slow_memory.v
++define+L2cache
++access+r
