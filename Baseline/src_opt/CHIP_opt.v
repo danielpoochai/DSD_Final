@@ -4,6 +4,7 @@
 `include "ALU.v"
 `include "Register.v"
 `include "Imm_Gen.v"
+`include "cache_read.v"
 `include "cache_opt.v"
 `include "forwarding_opt.v"
 `include "hazard_process.v"
@@ -51,10 +52,10 @@ output			DCACHE_wen;
 //--------------------------
 
 // wire declaration
-wire        ICACHE_ren;
-wire        ICACHE_wen;
+// wire        ICACHE_ren;
+// wire        ICACHE_wen;
 wire [29:0] ICACHE_addr;
-wire [31:0] ICACHE_wdata;
+// wire [31:0] ICACHE_wdata;
 wire        ICACHE_stall;
 wire [31:0] ICACHE_rdata;
 
@@ -64,6 +65,9 @@ wire [29:0] DCACHE_addr;
 wire [31:0] DCACHE_wdata;
 wire        DCACHE_stall;
 wire [31:0] DCACHE_rdata;
+
+assign mem_write_I = 0;
+assign mem_wdata_I = 0;
 
 //=========================================
 	// Note that the overall design of your RISCV includes:
@@ -77,10 +81,10 @@ wire [31:0] DCACHE_rdata;
 		.clk            (clk)           , 
 		.rst_n          (rst_n)         ,
 //----------I cache interface-------		
-		.ICACHE_ren     (ICACHE_ren)    ,
-		.ICACHE_wen     (ICACHE_wen)    ,
+		// .ICACHE_ren     (ICACHE_ren)    ,
+		// .ICACHE_wen     (ICACHE_wen)    ,
 		.ICACHE_addr    (ICACHE_addr)   ,
-		.ICACHE_wdata   (ICACHE_wdata)  ,
+		// .ICACHE_wdata   (ICACHE_wdata)  ,
 		.ICACHE_stall   (ICACHE_stall)  ,
 		.ICACHE_rdata   (ICACHE_rdata)  ,
 //----------D cache interface-------
@@ -110,19 +114,19 @@ wire [31:0] DCACHE_rdata;
         .mem_ready  (mem_ready_D)
 	);
 
-	cache I_cache(
+	cache_read I_cache(
         .clk        (clk)         ,
         .proc_reset (~rst_n)      ,
-        .proc_read  (ICACHE_ren)  ,
-        .proc_write (ICACHE_wen)  ,
+        // .proc_read  (ICACHE_ren)  ,
+        // .proc_write (ICACHE_wen)  ,
         .proc_addr  (ICACHE_addr) ,
         .proc_rdata (ICACHE_rdata),
-        .proc_wdata (ICACHE_wdata),
+        // .proc_wdata (ICACHE_wdata),
         .proc_stall (ICACHE_stall),
         .mem_read   (mem_read_I)  ,
-        .mem_write  (mem_write_I) ,
+        // .mem_write  (mem_write_I) ,
         .mem_addr   (mem_addr_I)  ,
-        .mem_wdata  (mem_wdata_I) ,
+        // .mem_wdata  (mem_wdata_I) ,
         .mem_rdata  (mem_rdata_I) ,
         .mem_ready  (mem_ready_I)
 	);
@@ -132,16 +136,17 @@ endmodule
 
 module RISCV_Pipeline(
 	clk, rst_n,
-	ICACHE_ren, ICACHE_wen, ICACHE_addr, ICACHE_wdata, ICACHE_stall, ICACHE_rdata,
+	// ICACHE_ren, ICACHE_wen, ICACHE_addr, ICACHE_wdata, ICACHE_stall, ICACHE_rdata,
+	ICACHE_addr, ICACHE_stall, ICACHE_rdata,
 	DCACHE_ren, DCACHE_wen, DCACHE_addr, DCACHE_wdata, DCACHE_stall, DCACHE_rdata
 	);
 	input clk;
 	input rst_n;
 	//I_cache
-	output ICACHE_ren;
-	output ICACHE_wen; 
+	// output ICACHE_ren;
+	// output ICACHE_wen; 
 	output [29:0] ICACHE_addr; 
-	output [31:0] ICACHE_wdata;
+	// output [31:0] ICACHE_wdata;
 	input ICACHE_stall;
 	input [31:0] ICACHE_rdata;
 	//D_cache
@@ -155,7 +160,7 @@ module RISCV_Pipeline(
 	reg [31:0] instruction, instruction_n;
 
 	//PC
-	wire signed [8:0] pc_in, pc_out, pc_in_tmp, pc_add_2, pc_add_4, pc_add_imm;
+	wire signed [8:0] pc_in, pc_out, pc_in_tmp, pc_add_4, pc_add_imm;
 	reg signed [8:0] pc, pc_n, pc_mux, pc_add_4_id, pc_add_4_id_n, pc_add_imm_ex, pc_add_imm_ex_n;
 	//Decoder
 	wire [6:0] opcode;
@@ -220,10 +225,10 @@ module RISCV_Pipeline(
 	wire stall;
 	assign stall = ICACHE_stall || DCACHE_stall;
 
-	assign ICACHE_ren 	= 1'd1;
-	assign ICACHE_wen 	= 0; 
+	// assign ICACHE_ren 	= 1'd1;
+	// assign ICACHE_wen 	= 0; 
 	assign ICACHE_addr 	= pc_out[8:2]; 
-	assign ICACHE_wdata = 0;
+	// assign ICACHE_wdata = 0;
 	// DCACHE_assignment
 	assign DCACHE_ren 	= memread_mem;
 	assign DCACHE_wen 	= memwrite_mem;
@@ -235,7 +240,7 @@ module RISCV_Pipeline(
 	assign instruction_wire = instruction;
 
 	assign pc_add_4		= pc_out + 9'd4;
-	assign pc_add_2 	= pc_out + 9'd2;
+	// assign pc_add_2 	= pc_out + 9'd2;
 	// assign pc_mux 		= jalr?(rs1_select?(is_ex?result:(is_mem?((jalr_mem|jal_mem)?pc_add_4_mem:alu_result_mem):((jalr_wb| jal_wb)?pc_add_4_wb:alu_result_wb))):rs1_data):pc;
 	assign pc_add_imm 	= $signed(pc_mux) + $signed(immediate);
 

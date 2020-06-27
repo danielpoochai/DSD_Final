@@ -232,7 +232,7 @@ module RISCV_Pipeline(
 	// DCACHE_assignment
 	assign DCACHE_ren 	= memread_mem;
 	assign DCACHE_wen 	= memwrite_mem;
-	assign DCACHE_addr 	= alu_result_mem[31:2];
+	assign DCACHE_addr 	= alu_result_mem[29:0];
 	assign DCACHE_wdata = {{rs2_data_mem[7:0]},{rs2_data_mem[15:8]},{rs2_data_mem[23:16]},{rs2_data_mem[31:24]}}; 
 	
 	assign branch_or_not= (branch_ex & funct3_ex & ~zero)|(branch_ex & ~(funct3_ex) & zero);
