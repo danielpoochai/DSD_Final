@@ -6,7 +6,7 @@
 `define CYCLE 10 // You can modify your clock frequency
 
 `define DMEM_INIT "D_mem"
-`define SDFFILE   "./CHIP_syn25.sdf"	// Modify your SDF file name
+`define SDFFILE   "./CHIP_syn.sdf"	// Modify your SDF file name
 
 // For different condition (I_mem, TestBed)
 `ifdef noHazard

@@ -20,7 +20,7 @@ module Registers(
     output signed [31:0] rs1_data;
     output signed [31:0] rs2_data;
 
-    reg signed [15:0] REGISTER_BANK[0:18], REGISTER_BANK_NXT[0:18];
+    reg signed [15:0] REGISTER_BANK[0:25], REGISTER_BANK_NXT[0:25];
 
     assign rs1_data = REGISTER_BANK_NXT[rs1];
     assign rs2_data = REGISTER_BANK_NXT[rs2];
@@ -28,7 +28,7 @@ module Registers(
     integer i,k;
     always@(*) begin
         REGISTER_BANK_NXT[0] =16'd0;
-        for(i=1; i<=18; i=i+1) REGISTER_BANK_NXT[i] = REGISTER_BANK[i];
+        for(i=1; i<=25; i=i+1) REGISTER_BANK_NXT[i] = REGISTER_BANK[i];
         case(regwrite)
             1'b1: 
             begin
@@ -42,7 +42,7 @@ module Registers(
             default:
             begin
                 REGISTER_BANK_NXT[0] =16'd0;
-                for(k=1; k<=31; k=k+1) REGISTER_BANK_NXT[k] = REGISTER_BANK[k];
+                for(k=1; k<=25; k=k+1) REGISTER_BANK_NXT[k] = REGISTER_BANK[k];
             end
         endcase
     end
@@ -50,10 +50,10 @@ module Registers(
     integer j;
     always@(posedge clk) begin
         if(~rst_n) begin
-            for(j=0; j<=18; j=j+1) REGISTER_BANK[j] <= 16'd0;
+            for(j=0; j<=25; j=j+1) REGISTER_BANK[j] <= 16'd0;
         end
         else begin
-            for(j=0; j<=18; j=j+1) REGISTER_BANK[j] <= REGISTER_BANK_NXT[j];
+            for(j=0; j<=25; j=j+1) REGISTER_BANK[j] <= REGISTER_BANK_NXT[j];
         end
     end
 endmodule
