@@ -3,7 +3,7 @@ current_design [get_designs CHIP]
 #You may modified the clock constraints 
 #or add more constraints for your design
 ####################################################
-set cycle  2.5      
+set cycle 3
 ####################################################
 
 
@@ -34,12 +34,12 @@ set_output_delay $t_out -clock CLK [all_outputs]
 #You may modified setting of compile 
 #####################################################
 compile_ultra
-write_sdf -version 2.1 CHIP_syn.sdf
-write -format verilog -hier -output CHIP_syn.v
-write -format ddc     -hier -output CHIP_syn.ddc  
+write_sdf -version 2.1 CHIP_syn3.sdf
+write -format verilog -hier -output CHIP_syn3.v
+write -format ddc     -hier -output CHIP_syn3.ddc  
 #####################################################  
-
-
+report_area 
+report_area > area_e.rpt
 
 
 

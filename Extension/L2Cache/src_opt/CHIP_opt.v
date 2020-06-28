@@ -6,7 +6,7 @@
 `include "Imm_Gen.v"
 `include "cache_read_L1.v"
 `include "cache_L1.v"
-`include "cache_L2.v"
+`include "cache_L2_mod.v"
 `include "forwarding_unit.v"
 `include "hazard_process.v"
 `include "PC.v"

@@ -51,6 +51,7 @@ module Alignment(
 		instruction_w 	= instruction_r;
 		is_compress_w 	= is_compress_r;
 		align_stall_w 	= 0;
+		orig_instr_reg 	= 0; 
 		if(stall) begin
 			buffer_w 		= buffer_r;
 			counter_w 		= counter_r;

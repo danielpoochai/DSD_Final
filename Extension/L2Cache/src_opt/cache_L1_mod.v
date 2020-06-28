@@ -16,7 +16,10 @@ module cache(
     mem_rdata_D,
     mem_ready_D,
     L2_D_write_data,
-    L1_read_miss_I
+    L1_read_miss_D,
+    L2_read_hit_D,
+    L1_write_miss_D,
+    L2_write_hit_D
 );
     
 //==== input/output definition ============================
@@ -38,6 +41,8 @@ module cache(
     input  [127:0] mem_rdata_D;
     input mem_ready_D;
     input  [127:0] L2_D_write_data;
+
+    output L1_read_miss_D;
 //====parameters   ========================================
     localparam IDLE             = 2'd0;
     localparam READ_STALL       = 2'd1;
@@ -58,6 +63,8 @@ module cache(
     wire valid_in_cache, dirty_in_cache;
 
     reg read_for_write;
+
+    reg L1_read_miss_D_r, L1_read_miss_D_w;
 //==== Assignment =========================================
     //assign tag data1 data2 data3 data4                //can be spare for area
     assign index            = proc_addr[4:2];           
@@ -72,11 +79,14 @@ module cache(
     assign L2_addr      = proc_addr;
     assign L2_wdata     = proc_wdata;
 
+    assign L1_read_miss_D = L1_read_miss_D_w;
+
 //==== combinational circuit ==============================
     integer idx; //for cache update
     always@(*) begin 
         state_w         = state_r;
         proc_stall_w    = proc_stall_r;
+        L1_read_miss_D_w = L1_read_miss_D_r;
         proc_rdata      = 32'd0;
         for(idx = 0; idx <= 7; idx = idx+1) begin
              cache_w[idx] = cache_r[idx];
@@ -85,6 +95,29 @@ module cache(
         case(state_r) 
             IDLE:
             begin
+                if(proc_read) begin
+                    if(tag == tag_in_cache) begin
+                        if(valid_in_cache) begin // read_hit
+                            L1_read_miss_D_w = 1'd0;
+                            proc_stall_w = 1'd0;
+                            case(proc_addr[1:0]) 
+                                2'd3: proc_rdata = cache_r[index][127:96]; //word0
+                                2'd2: proc_rdata = cache_r[index][95:64];  //word1 
+                                2'd1: proc_rdata = cache_r[index][63:32];  //word2
+                                2'd0: proc_rdata = cache_r[index][31:0];   //word3
+                                default: proc_rdata = 32'd0;
+                            endcase
+                        end
+                        else begin // read miss
+                            L1_read_miss_D_w = 1'd1;
+
+                            proc_stall_w = 1'd1;
+                        end 
+                    end
+                end
+
+                if(proc_write) begin
+                end
                 if(tag == tag_in_cache) begin //25 bits 
                     if(valid_in_cache) begin
                         if(proc_read) begin  // read hit
@@ -233,6 +266,7 @@ always@( posedge clk ) begin
         end
         state_r         <= 2'd0;
         proc_stall_r    <= 1'd0;
+        L1_read_miss_D_r <= 1'd0;
     end
     else begin
         for(i = 0; i<=7; i = i+1) begin
@@ -240,6 +274,7 @@ always@( posedge clk ) begin
         end
         state_r         <= state_w;
         proc_stall_r    <= proc_stall_w;
+        L1_read_miss_D_r <= L1_read_miss_D_w;
     end
 end
 endmodule
