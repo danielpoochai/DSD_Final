@@ -68,6 +68,7 @@ wire [31:0] DCACHE_rdata;
 
 assign mem_write_I = 0;
 assign mem_wdata_I = 0;
+assign reset 	   = ~rst_n; 
 
 //=========================================
 	// Note that the overall design of your RISCV includes:
@@ -99,7 +100,7 @@ assign mem_wdata_I = 0;
 
 	cache D_cache(
         .clk        (clk)         ,
-        .proc_reset (~rst_n)      ,
+        .proc_reset (reset)      ,
         .proc_read  (DCACHE_ren)  ,
         .proc_write (DCACHE_wen)  ,
         .proc_addr  (DCACHE_addr) ,
@@ -116,7 +117,7 @@ assign mem_wdata_I = 0;
 
 	cache_read I_cache(
         .clk        (clk)         ,
-        .proc_reset (~rst_n)      ,
+        .proc_reset (reset)      ,
         // .proc_read  (ICACHE_ren)  ,
         // .proc_write (ICACHE_wen)  ,
         .proc_addr  (ICACHE_addr) ,
