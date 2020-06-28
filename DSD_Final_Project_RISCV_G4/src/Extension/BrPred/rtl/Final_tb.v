@@ -18,8 +18,8 @@
 	`include "./TestBed_hasHazard.v"
 `endif	
 `ifdef BrPred
-	`define IMEM_INIT "I_mem_BrPred_test"
-	`include "./TestBed_BrPred_test.v"
+	`define IMEM_INIT "I_mem_BrPred"
+	`include "./TestBed_BrPred.v"
 `endif
 `ifdef compression
 	`define IMEM_INIT "I_mem_compression"
