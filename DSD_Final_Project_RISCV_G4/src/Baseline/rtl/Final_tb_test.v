@@ -88,9 +88,9 @@ module Final_tb;
 				DCACHE_wdata,
 				DCACHE_wen,
 
-				// DCACHE_stall,
-				// ICACHE_stall,
-				// ICACHE_addr
+				DCACHE_stall,
+				ICACHE_stall,
+				ICACHE_addr
 				);
 	
 	slow_memory slow_memD(
@@ -167,41 +167,41 @@ module Final_tb;
 	    if(finish)
 	       #(`CYCLE) $finish;		   
 	
-	// always@(*) begin
-	// 	miss_D_nxt = miss_D;
-	// 	miss_I_nxt = miss_I;
-	// 	instr_nxt = instr;
-	// end
+	always@(*) begin
+		miss_D_nxt = miss_D;
+		miss_I_nxt = miss_I;
+		instr_nxt = instr;
+	end
 
-	// always@(posedge DCACHE_stall) begin
-	// 	miss_D_nxt = miss_D + 1;
-	// 	$display("miss_D",miss_D_nxt);
-	// end
+	always@(posedge DCACHE_stall) begin
+		miss_D_nxt = miss_D + 1;
+		$display("miss_D",miss_D_nxt);
+	end
 
-	// always@(posedge ICACHE_stall) begin
-	// 	miss_I_nxt = miss_I + 1;
-	// 	$display("miss_I",miss_I_nxt);
-	// end
+	always@(posedge ICACHE_stall) begin
+		miss_I_nxt = miss_I + 1;
+		$display("miss_I",miss_I_nxt);
+	end
 
-	// always@(posedge ICACHE_addr) begin
-	// 	if(ICACHE_addr != 0)
-	// 	begin
-	// 		instr_nxt = instr + 1;
-	// 		$display("instr",instr_nxt);
-	// 	end
-	// 	else instr_nxt = instr;
-	// end
+	always@(posedge ICACHE_addr) begin
+		if(ICACHE_addr != 0)
+		begin
+			instr_nxt = instr + 1;
+			$display("instr",instr_nxt);
+		end
+		else instr_nxt = instr;
+	end
 
-	// always@(posedge clk) begin
-	// 	if(~rst_n) begin
-	// 		miss_D <= 0;
-	// 		miss_I <= 0;
-	// 		instr <= 0;
-	// 	end
-	// 	else begin 
-	// 		miss_D <= miss_D_nxt;
-	// 		miss_I <= miss_I_nxt;
-	// 		instr <= instr_nxt;
-	// 	end
-	// end
+	always@(posedge clk) begin
+		if(~rst_n) begin
+			miss_D <= 0;
+			miss_I <= 0;
+			instr <= 0;
+		end
+		else begin 
+			miss_D <= miss_D_nxt;
+			miss_I <= miss_I_nxt;
+			instr <= instr_nxt;
+		end
+	end
 endmodule

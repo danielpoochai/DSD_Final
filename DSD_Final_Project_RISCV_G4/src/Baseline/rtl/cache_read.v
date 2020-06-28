@@ -24,9 +24,9 @@ module cache_read(
     // memory interface
     input  [127:0] mem_rdata;
     input          mem_ready;
-    output         mem_read; 
+    output  reg     mem_read; 
     // output         mem_write;
-    output  [27:0] mem_addr;
+    output  reg [27:0] mem_addr;
     // output [127:0] mem_wdata;
 //====parameters   ========================================
     localparam IDLE             = 2'd0;
@@ -44,10 +44,6 @@ module cache_read(
     //index reg
     reg [2:0] index_r, index_w;
 
-    reg mem_read_r, mem_read_w;
-    // reg mem_write_r, mem_write_w;
-    reg [27:0] mem_addr_r, mem_addr_w;
-    // reg [127:0] mem_wdata_r, mem_wdata_w;
     //index tag wire                                     //can be spare for area 
     wire [2:0] index;
     wire [24:0] tag, tag_in_cache;
@@ -62,20 +58,15 @@ module cache_read(
     assign dirty_in_cache   = cache_r[index][154];
     //output
     assign proc_stall   = proc_stall_w;
-    assign mem_read     = mem_read_r;
-    // assign mem_write    = mem_write_r;
-    assign mem_addr     = mem_addr_r;
-    // assign mem_wdata    = mem_wdata_r;
 
 //==== combinational circuit ==============================
     integer idx; //for cache update
     always@(*) begin 
         state_w         = state_r;
         proc_stall_w    = proc_stall_r;
-        mem_read_w      = mem_read_r;
-        // mem_write_w     = mem_write_r;
-        mem_addr_w      = mem_addr_r;
-        // mem_wdata_w     = mem_wdata_r;
+        
+        mem_read = 0;
+        mem_addr = 0;
         index_w         = index_r;
         proc_rdata      = 32'd0;
         for(idx = 0; idx <= 7; idx = idx+1) begin
@@ -90,6 +81,7 @@ module cache_read(
                 if(tag == tag_in_cache) begin //25 bits 
                     if(valid_in_cache) begin
                         // if(proc_read) begin  // read hit
+                            proc_stall_w            = 1'd0;
                             case(index_w) //index
                                 3'd0:
                                 begin
@@ -179,46 +171,88 @@ module cache_read(
                         // end
                     end
                     else begin              //not valid       
-                        // if(proc_read) begin
+                            index_w         = index;
                             state_w         = READ_STALL;
                             proc_stall_w    = 1'd1;
-                            mem_read_w      = 1'd1;
-                            mem_addr_w      = proc_addr[29:2];
-                            //update valid bit
-                            cache_w[index_w][153] = 1'd1;
-                        // end
+                            mem_read      = 1'd1;
+                            mem_addr      = proc_addr[29:2];
                     end
                 end
                 else begin
-                    // if(proc_read) begin
-                        // if(dirty_in_cache) begin
-                        //     state_w         = WRITE_STALL_WRITE;
-                        //     mem_wdata_w     = cache_r[index_w][127:0];
-                        //     proc_stall_w    = 1'd1;
-                        //     mem_write_w     = 1'd1;
-                        //     mem_addr_w      = {tag_in_cache, index_w};
-                        // end
-                        // else begin
-                            state_w         = READ_STALL;
-                            proc_stall_w    = 1'd1;
-                            mem_read_w      = 1'd1;
-                            mem_addr_w      = proc_addr[29:2];
-                            //update valid bit
-                            cache_w[index_w][153] = 1'd1;
-                        // end
-                    // end
+                        index_w         = index;
+                        state_w         = READ_STALL;
+                        proc_stall_w    = 1'd1;
+                        mem_read      = 1'd1;
+                        mem_addr      = proc_addr[29:2];
                 end                
             end
             READ_STALL:
             begin
+                mem_read                    = 1'd1;
+                mem_addr                    = proc_addr[29:2];
                 if(mem_ready) begin
                     state_w                 = IDLE;
                     proc_stall_w            = 1'd0;
-                    mem_read_w              = 1'd0;
-                    mem_addr_w              = 28'd0;
-                    cache_w[index_r][152:128] = tag;      //update tag
-                    cache_w[index_r][127:0]   = mem_rdata;//update data
-                    //read data output
+                    mem_read                = 1'd0;
+                    mem_addr                = 28'd0;
+                    case(index_r)
+                        3'd0:
+                        begin
+                            cache_w[0][153]   = 1'd1;
+                            cache_w[0][152:128] = tag;      //update tag
+                            cache_w[0][127:0]   = mem_rdata;//update data
+                        end
+                        3'd1:
+                        begin
+                            cache_w[1][153]   = 1'd1;
+                            cache_w[1][152:128] = tag;      //update tag
+                            cache_w[1][127:0]   = mem_rdata;//update data
+                        end
+                        3'd2:
+                        begin
+                            cache_w[2][153]   = 1'd1;
+                            cache_w[2][152:128] = tag;      //update tag
+                            cache_w[2][127:0]   = mem_rdata;//update data
+                        end
+                        3'd3:
+                        begin
+                            cache_w[3][153]   = 1'd1;
+                            cache_w[3][152:128] = tag;      //update tag
+                            cache_w[3][127:0]   = mem_rdata;//update data
+                        end 
+                        3'd4:
+                        begin
+                            cache_w[4][153]   = 1'd1;
+                            cache_w[4][152:128] = tag;      //update tag
+                            cache_w[4][127:0]   = mem_rdata;//update data
+                        end 
+                        3'd5:
+                        begin
+                            cache_w[5][153]   = 1'd1;
+                            cache_w[5][152:128] = tag;      //update tag
+                            cache_w[5][127:0]   = mem_rdata;//update data
+                        end 
+                        3'd6:
+                        begin
+                            cache_w[6][153]   = 1'd1;
+                            cache_w[6][152:128] = tag;      //update tag
+                            cache_w[6][127:0]   = mem_rdata;//update data
+                        end 
+                        3'd7:
+                        begin
+                            cache_w[7][153]   = 1'd1;
+                            cache_w[7][152:128] = tag;      //update tag
+                            cache_w[7][127:0]   = mem_rdata;//update data
+                        end
+                        default:
+                        begin
+                            cache_w[0][153]   = 1'd1;
+                            cache_w[0][152:128] = tag;      //update tag
+                            cache_w[0][127:0]   = mem_rdata;//update data
+                        end 
+                    endcase
+                    
+                    // read data output
                     case(proc_addr[1:0])
                         2'd3: proc_rdata = mem_rdata[127:96]; //word0
                         2'd2: proc_rdata = mem_rdata[95:64];  //word1 
@@ -228,30 +262,12 @@ module cache_read(
                     endcase
                 end
             end
-            // WRITE_STALL_WRITE:
-            // begin
-            //     if(mem_ready) begin
-            //         state_w = IDLE;
-            //         // if(dirty_in_cache) begin //just update memory
-            //         //     cache_w[index_r][154] = 1'd0;
-            //         //     mem_write_w         = 1'd0;
-            //         //     mem_addr_w          = 28'd0;
-            //         // end
-            //         // else begin
-            //             proc_stall_w    = 1'd0;
-            //             // mem_write_w     = 1'd0;
-            //             mem_addr_w      = 28'd0;
-            //         // end
-            //     end  
-            // end
             default:
             begin
                 state_w         = state_r;
                 proc_stall_w    = proc_stall_r;
-                mem_read_w      = mem_read_r;
-                // mem_write_w     = mem_write_r;
-                mem_addr_w      = mem_addr_r;
-                // mem_wdata_w     = mem_wdata_r;
+                mem_read        = 0;
+                mem_addr        = 0;
                 index_w         = index_r;
                 for(idx = 0; idx <= 7; idx = idx+1) begin
                      cache_w[idx] = cache_r[idx];
@@ -268,10 +284,6 @@ always@( posedge clk ) begin
         end
         state_r         <= 2'd0;
         proc_stall_r    <= 1'd0;
-        mem_read_r      <= 1'd0;
-        // mem_write_r     <= 1'd0;
-        mem_addr_r      <= 28'd0;
-        // mem_wdata_r     <= 128'd0;
         index_r         <= 3'd0;
     end
     else begin
@@ -280,10 +292,6 @@ always@( posedge clk ) begin
         end
         state_r         <= state_w;
         proc_stall_r    <= proc_stall_w;
-        mem_read_r      <= mem_read_w;
-        // mem_write_r     <= mem_write_w;
-        mem_addr_r      <= mem_addr_w;
-        // mem_wdata_r     <= mem_wdata_w;
         index_r         <= index_w;
     end
 end

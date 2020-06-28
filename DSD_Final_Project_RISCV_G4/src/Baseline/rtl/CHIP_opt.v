@@ -28,7 +28,11 @@ module CHIP (	clk,
 //----------for TestBed--------------				
 				DCACHE_addr, 
 				DCACHE_wdata,
-				DCACHE_wen
+				DCACHE_wen,
+
+				// DCACHE_stall,
+				// ICACHE_stall,
+				// ICACHE_addr
 			);
 input			clk, rst_n;
 //--------------------------
@@ -49,6 +53,10 @@ input			mem_ready_I;
 output	[29:0]	DCACHE_addr;
 output	[31:0]	DCACHE_wdata;
 output			DCACHE_wen;
+//for miss rate
+// output DCACHE_stall;
+// output ICACHE_stall;
+// output [29:0]ICACHE_addr;
 //--------------------------
 
 // wire declaration
@@ -203,8 +211,8 @@ module RISCV_Pipeline(
 	//EX 
 	reg [31:0] src2_tmp;
 	wire [1:0] ForwardA, ForwardB;
-	wire rs1_select ; 
-	wire is_mem, is_ex ;
+	wire rs1_select; 
+	wire is_mem, is_ex;
 	//EX/MEM register
 	reg memtoreg_mem_n, regwrite_mem_n, memread_mem_n, memwrite_mem_n, jal_mem_n, jalr_mem_n; 
 	reg memtoreg_mem, regwrite_mem, memread_mem, memwrite_mem, jal_mem, jalr_mem;
@@ -224,6 +232,8 @@ module RISCV_Pipeline(
 
 	//compress instruction
 	wire stall;
+	wire j;
+	assign j = jal | jalr; 
 	assign stall = ICACHE_stall || DCACHE_stall;
 
 	// assign ICACHE_ren 	= 1'd1;
@@ -246,7 +256,7 @@ module RISCV_Pipeline(
 	assign pc_add_imm 	= $signed(pc_mux) + $signed(immediate);
 
 	//w/o branch_prediction
-	assign pc_in_tmp 	= branch_or_not? pc_add_imm_ex: ((jal|jalr)? pc_add_imm: pc_add_4);
+	assign pc_in_tmp 	= branch_or_not? pc_add_imm_ex: (j ? pc_add_imm: pc_add_4);
 	assign pc_in 		= (stall) ? pc_out: pc_in_tmp;
 
 
@@ -549,7 +559,7 @@ module RISCV_Pipeline(
 	assign memread_mem_wire = memread_mem;
 	assign memread_ex_wire 	= memread_ex;
 	assign memread_wb_wire	= memread_wb;
-	assign jump_flag 		= jal || jalr;
+	assign jump_flag 		= j;
 	assign branch_flag		= branch_or_not;
 	assign rs1_ex_wire 		= rs1_ex;
 	assign rs2_ex_wire 		= rs2_ex;
