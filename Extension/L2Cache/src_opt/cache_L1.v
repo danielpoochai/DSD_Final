@@ -13,7 +13,9 @@ module cache(
     L2_rdata,
     L2_wdata,
     L2_ready,
-    mem_rdata_D
+    mem_rdata_D,
+    mem_ready_D,
+    L2_D_write_data
 );
     
 //==== input/output definition ============================
@@ -26,17 +28,19 @@ module cache(
     output         proc_stall;
     output  [31:0] proc_rdata;
     // memory interface
-    input  [127:0] L2_rdata;
+    input  [31:0] L2_rdata;
     input          L2_ready;
     output         L2_read, L2_write;
     output  [29:0] L2_addr;
     output  [31:0] L2_wdata;
 
     input  [127:0] mem_rdata_D;
+    input mem_ready_D;
+    input  [127:0] L2_D_write_data;
 //====parameters   ========================================
     localparam IDLE             = 2'd0;
     localparam READ_STALL       = 2'd1;
-    localparam WRITE_STALL_READ = 2'd2;
+    localparam WRITE_STALL      = 2'd2;
     localparam WRITE_STALL_WRITE= 2'd3;
 //==== wire/reg definition ================================
     //state reg
@@ -52,6 +56,7 @@ module cache(
     wire [24:0] tag, tag_in_cache;
     wire valid_in_cache, dirty_in_cache;
 
+    reg read_for_write;
 //==== Assignment =========================================
     //assign tag data1 data2 data3 data4                //can be spare for area
     assign index            = proc_addr[4:2];           
@@ -96,53 +101,117 @@ module cache(
                         if(proc_write) begin //write hit
                             if(L2_ready) begin 
                                 proc_stall_w = 1'd0; 
-                                case(proc_addr[1:0])
-                                    2'd3: cache_w[index][127:96]= proc_wdata;
-                                    2'd2: cache_w[index][95:64] = proc_wdata; 
-                                    2'd1: cache_w[index][63:32] = proc_wdata;
-                                    2'd0: cache_w[index][31:0]  = proc_wdata;
-                                    default: cache_w[index]     = cache_r[0];
-                                endcase
                             end
                             else proc_stall_w = 1'd1;
                             //update data in cache
+                            // cache_w[index][127:0] = L2_D_write_data;
+                            case(proc_addr[1:0])
+                                2'd3: cache_w[index][127:96]= proc_wdata;
+                                2'd2: cache_w[index][95:64] = proc_wdata; 
+                                2'd1: cache_w[index][63:32] = proc_wdata;
+                                2'd0: cache_w[index][31:0]  = proc_wdata;
+                                default: cache_w[index]     = cache_r[0];
+                            endcase
                         end
                     end
                     else begin              //not valid 
-                        if(~L2_ready) begin
-                            if(proc_read || proc_write) begin
+                        if(proc_read) begin
+                            if(~L2_ready) begin
                                 state_w = READ_STALL;
-                                proc_stall_w        = 1'd1;
-                                cache_w[index][153] = 1'd1;
+                                proc_stall_w = 1'd1;
+                            end
+                            else begin
+                                proc_stall_w = 1'd0;
+                                proc_rdata = L2_rdata;
                             end
                         end
-                        else begin
-                            if(proc_read) proc_rdata = L2_rdata;
-                            proc_stall_w = 1'd0;
-                        end      
+
+                        if(proc_write) begin
+                            if(~L2_ready) begin
+                                state_w = WRITE_STALL;
+                                proc_stall_w = 1'd1;
+                            end   
+                            else proc_stall_w = 1'd0;     
+                        end
                     end
                 end
                 else begin
-                    if(~L2_ready) begin
-                        if(proc_read || proc_write) begin
-                            state_w      = READ_STALL;
-                            proc_stall_w = 1'd1;
+                    if(proc_read) begin
+                        if(L2_ready) begin
+                            proc_rdata = L2_rdata;
+                            proc_stall_w = 1'd0;
+                        end
+                        else begin
+                            proc_stall_w =1'd1;
+                            state_w = READ_STALL;
                         end
                     end
-                    else begin
-                        if(proc_read) proc_rdata = L2_rdata; 
-                        proc_stall_w = 1'd0;      
+                    if(proc_write)begin
+                        if(L2_ready) begin
+                            proc_stall_w = 1'd0;
+                        end
+                        else begin
+                            proc_stall_w = 1'd1;
+                            state_w = WRITE_STALL;
+                        end
                     end
                 end                
             end
             READ_STALL:
             begin
-                if(L2_ready) begin
-                    state_w                 = IDLE;
+                if(mem_ready_D) begin
                     proc_stall_w            = 1'd1;
+                    cache_w[index][153]     = 1'd1;  //valid bit
                     cache_w[index][152:128] = tag;
-                    cache_w[index][127:0]   = mem_rdata_D;     
+                    cache_w[index][127:0]   = mem_rdata_D; 
+                    // if(L2_ready) begin
+                    //     state_w  = IDLE;
+                    //     // proc_stall_w  = 1'd0;
+                    //     // case(proc_addr[1:0]) 
+                    //     //     2'd3: proc_rdata = mem_rdata_D[127:96]; //word0
+                    //     //     2'd2: proc_rdata = mem_rdata_D[95:64];  //word1 
+                    //     //     2'd1: proc_rdata = mem_rdata_D[63:32];  //word2
+                    //     //     2'd0: proc_rdata = mem_rdata_D[31:0];   //word3
+                    //     //     default: proc_rdata = 32'd0;
+                    //     // endcase
+                    // end
+                    // case(proc_addr[1:0]) 
+                    //     2'd3: proc_rdata = mem_rdata_D[127:96]; //word0
+                    //     2'd2: proc_rdata = mem_rdata_D[95:64];  //word1 
+                    //     2'd1: proc_rdata = mem_rdata_D[63:32];  //word2
+                    //     2'd0: proc_rdata = mem_rdata_D[31:0];   //word3
+                    //     default: proc_rdata = 32'd0;
+                    // endcase
                 end
+                if(L2_ready) state_w = IDLE;
+            end
+            WRITE_STALL:
+            begin
+                if(mem_ready_D) begin
+                    proc_stall_w            = 1'd1;
+                    cache_w[index][153]     = 1'd1;  //valid bit
+                    cache_w[index][152:128] = tag;
+                    cache_w[index][127:0]   = mem_rdata_D; 
+                    // if(L2_ready) begin
+                    //     state_w  = IDLE;
+                    //     // proc_stall_w = 1'd0;
+                    //     // case(proc_addr[1:0])
+                    //     //     2'd3: cache_w[index][127:96]= proc_wdata;
+                    //     //     2'd2: cache_w[index][95:64] = proc_wdata; 
+                    //     //     2'd1: cache_w[index][63:32] = proc_wdata;
+                    //     //     2'd0: cache_w[index][31:0]  = proc_wdata;
+                    //     //     default: cache_w[index]     = cache_r[0];
+                    //     // endcase
+                    // end
+                    // case(proc_addr[1:0])
+                    //     2'd3: cache_w[index][127:96]= proc_wdata;
+                    //     2'd2: cache_w[index][95:64] = proc_wdata; 
+                    //     2'd1: cache_w[index][63:32] = proc_wdata;
+                    //     2'd0: cache_w[index][31:0]  = proc_wdata;
+                    //     default: cache_w[index]     = cache_r[0];
+                    // endcase
+                end
+                if(L2_ready) state_w = IDLE;
             end
             default:
             begin

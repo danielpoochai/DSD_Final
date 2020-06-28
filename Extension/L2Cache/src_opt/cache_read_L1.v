@@ -73,7 +73,7 @@ module cache_read(
                 if(tag == tag_in_cache) begin //25 bits 
                     if(valid_in_cache) begin
 
-                        proc_stall_w    = 1'd0;
+                        proc_stall_w = 1'd0;
             
                         case(proc_addr[1:0]) 
                             2'd3: proc_rdata = cache_r[index][127:96]; //word0

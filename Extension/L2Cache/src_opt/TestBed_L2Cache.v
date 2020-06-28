@@ -70,6 +70,7 @@ module	TestBed(
 	always@(*)	// FSM for test
 	begin
 		finish = 1'b0;
+		
 		case( curstate )
 		state_idle: 	begin
 							nxtaddr = 0;
