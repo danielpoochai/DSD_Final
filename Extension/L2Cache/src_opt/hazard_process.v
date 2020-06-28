@@ -49,7 +49,7 @@ begin
     begin 
         hazard_stall = 1'b1;
         hazard_flush = 1'b1;
-        hazard_mux = 1'b1;
+        hazard_mux   = 1'b0;
     end
     else if(ID_EX_memread && jalr  && ID_EX_rt == IF_ID_rs1 ) // only for load harzard 
     begin 

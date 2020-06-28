@@ -24,7 +24,8 @@ module cache_L2(
     mem_write_D,
     mem_wdata_D,
     mem_addr_D,
-    mem_ready_D
+    mem_ready_D,
+    L2_D_write_data
 );
     
 //==== input/output definition ============================
@@ -58,10 +59,12 @@ module cache_L2(
     output mem_write_D;
     output [27:0]  mem_addr_D;
     output [127:0] mem_wdata_D;
+    output [127:0] L2_D_write_data;
 //====parameters   ========================================
     localparam IDLE             = 2'd0;
     localparam READ_STALL       = 2'd1;
     localparam WRITE_STALL_WRITE= 2'd2;
+    localparam WRITE_ISTALL     = 2'd3;
 
     localparam IDLE_I           = 1'd0;
     localparam READ_STALL_I     = 1'd1;
@@ -87,7 +90,7 @@ module cache_L2(
 
     //index tag wire                                     
     wire [5:0] index_I, index_D;
-    wire [24:0] tag_I, tag_D, tag_in_cache_I, tag_in_cache_D;
+    wire [21:0] tag_I, tag_D, tag_in_cache_I, tag_in_cache_D;
     wire valid_in_cache_I, dirty_in_cache_I, which_in_cache_I;
     wire valid_in_cache_D, dirty_in_cache_D, which_in_cache_D;
 
@@ -117,32 +120,27 @@ module cache_L2(
     assign mem_addr_D   = mem_addr_D_r;
     assign mem_wdata_D  = mem_wdata_D_r;
 
+    assign L2_D_write_data = cache_w[index_D][127:0];
 //==== combinational circuit ==============================
     integer idx; //for cache update
     always@(*) begin
         //I_cache 
         I_state_w   = I_state_r;
         L2_ready_I_w= L2_ready_I_r;
-        // mem_read_I_w= mem_read_I_r;
-        // mem_addr_I_w= mem_addr_I_r;
-        mem_read_I_w= 0;
-        mem_addr_I_w= 0;
+        mem_read_I_w= mem_read_I_r;
+        mem_addr_I_w= mem_addr_I_r;
         L2_rdata_I  = 32'd0;  
         //D cache
         D_state_w       = D_state_r;
         L2_ready_w      = L2_ready_r;
-        // mem_read_D_w    = mem_read_D_r;
-        // mem_addr_D_w    = mem_addr_D_r;
-        // mem_write_D_w   = mem_write_D_r;
-        // mem_wdata_D_w   = mem_wdata_D_r;
-        mem_read_D_w    = 0;
-        mem_addr_D_w    = 0;
-        mem_write_D_w   = 0;
-        mem_wdata_D_w   = 0;
+        mem_read_D_w    = mem_read_D_r;
+        mem_addr_D_w    = mem_addr_D_r;
+        mem_write_D_w   = mem_write_D_r;
+        mem_wdata_D_w   = mem_wdata_D_r;
         L2_rdata        = 32'd0;
 
         for(idx = 0; idx <= 63; idx = idx+1) begin
-             cache_w[idx] = cache_r[idx];
+            cache_w[idx] = cache_r[idx];
         end
         //I_cache
         case(I_state_r)
@@ -166,35 +164,50 @@ module cache_L2(
                             mem_read_I_w = 1'd1;
                             mem_addr_I_w = L2_addr_I[29:2];
                             //update valid bit
-                            cache_w[index_I][150] = 1'd1;
+                            //cache_w[index_I][150] = 1'd1;
                         end
                     end
                 end
                 else begin
                     L2_ready_I_w = 1'd0;
-                    if(dirty_in_cache_I) begin
-                        if(D_state_r == IDLE) begin
-                            I_state_w = READ_STALL_I;
+                    if(which_in_cache_I == 1'd0) begin //I cache
+                        if(index_D != index_I) begin
+                            I_state_w    = READ_STALL_I;
                             mem_read_I_w = 1'd1;
                             mem_addr_I_w = L2_addr_I[29:2];
                             //update valid bit
-                            cache_w[index_I][150] = 1'd1;
+                            //cache_w[index_I][150] = 1'd1;
+                        end       
+                    end
+                    else begin //D cache
+                        if(dirty_in_cache_I) begin //D cache dirty 
+                            if(D_state_r == IDLE) begin
+                                I_state_w = READ_STALL_I;
+                                mem_read_I_w = 1'd1;
+                                mem_addr_I_w = L2_addr_I[29:2];
+                                //update valid bit
+                                // cache_w[index_I][150] = 1'd1;
+                                // cache_w[index_I][151] = 1'd0;
+                            end
+                        end
+                        else begin
+                            // if((index_D != index_I) || L2_ready) begin
+                                I_state_w    = READ_STALL_I;
+                                mem_read_I_w = 1'd1;
+                                mem_addr_I_w = L2_addr_I[29:2];
+                                //update valid bit
+                                // cache_w[index_I][150] = 1'd1;
+                            // end          
                         end
                     end
-                    else if(index_D != index_I) begin
-                        I_state_w = READ_STALL_I;
-                        mem_read_I_w = 1'd1;
-                        mem_addr_I_w = L2_addr_I[29:2];
-                        //update valid bit
-                        cache_w[index_I][150] = 1'd1;
-                    end           
                 end
             end
             READ_STALL_I:
             begin
+                L2_ready_I_w= 1'd0;
                 if(mem_ready_I) begin
                     I_state_w   = IDLE_I;
-                    L2_ready_I_w= 1'd0;
+                    // L2_ready_I_w= 1'd0;
                     mem_read_I_w= 1'd0;
                     mem_addr_I_w= 28'd0;
                     cache_w[index_I][149:128] = tag_I;
@@ -209,33 +222,36 @@ module cache_L2(
         case(D_state_r) 
             IDLE:
             begin
-                if(which_in_cache_D == 1'd1 && tag_D == tag_in_cache_D && valid_in_cache_D && L2_read) begin
-                    L2_ready_w = 1'd1;                    
-                    case(L2_addr[1:0])
-                        2'd3: L2_rdata = cache_r[index_D][127:96];
-                        2'd2: L2_rdata = cache_r[index_D][95:64];
-                        2'd1: L2_rdata = cache_r[index_D][63:32];
-                        2'd0: L2_rdata = cache_r[index_D][31:0];
-                        default: L2_rdata = 32'd0;
-                    endcase
-                end
-                if(I_state_r == IDLE_I && !((which_in_cache_I == 1'd0) && (tag_I == tag_in_cache_I)) && dirty_in_cache_I) begin
-                    D_state_w       = WRITE_STALL_WRITE;
+                if(I_state_r == IDLE_I && which_in_cache_I == 1'd1 && dirty_in_cache_I) begin
+                    L2_ready_w      = 1'd0;     
+                    D_state_w       = WRITE_ISTALL;
+                    // cache_w[index_I][151] = 1'd0;
                     mem_addr_D_w    = {tag_in_cache_I, index_I};
                     mem_write_D_w   = 1'd1;
                     mem_wdata_D_w   = cache_r[index_I][127:0];
-                    mem_read_D_w    = 1'd0;
+                    mem_read_D_w    = 1'd0;   
                 end
                 else if(which_in_cache_D == 1'd1 && tag_D == tag_in_cache_D) begin
                     if(valid_in_cache_D) begin
+                        if(L2_read) begin
+                            L2_ready_w = 1'd1;                    
+                            case(L2_addr[1:0])
+                                2'd3: L2_rdata = cache_r[index_D][127:96];
+                                2'd2: L2_rdata = cache_r[index_D][95:64];
+                                2'd1: L2_rdata = cache_r[index_D][63:32];
+                                2'd0: L2_rdata = cache_r[index_D][31:0];
+                                default: L2_rdata = 32'd0;
+                            endcase
+                        end
                         if(L2_write) begin
                             if(dirty_in_cache_D) begin
                                 D_state_w       = WRITE_STALL_WRITE;
                                 L2_ready_w      = 1'd0;
                                 mem_write_D_w   = 1'd1;
                                 mem_addr_D_w    = L2_addr[29:2]; 
-                                mem_wdata_D_w   =  cache_w[index_D][127:0];
+                                mem_wdata_D_w   = cache_r[index_D][127:0];
                                 mem_read_D_w    = 1'd0;
+                                // cache_w[index_D][151] = 1'd0;
                             end
                             else begin
                                 L2_ready_w      = 1'd1;
@@ -244,45 +260,57 @@ module cache_L2(
                                 mem_wdata_D_w   = 32'd0;
                                 mem_read_D_w    = 1'd0;
                             end
-
+                            cache_w[index_D] = cache_r[index_D];
                             case(L2_addr[1:0])
                                 2'd3: cache_w[index_D][127:96]  = L2_wdata;
                                 2'd2: cache_w[index_D][95:64]   = L2_wdata;
                                 2'd1: cache_w[index_D][63:32]   = L2_wdata;
                                 2'd0: cache_w[index_D][31:0]    = L2_wdata;
-                                default:  cache_w[index_D] = 0;
+                                default:  cache_w[index_D] = cache_r[index_D];
                             endcase
                             cache_w[index_D][151] = 1'd1; 
+                            cache_w[index_D][152] = 1'd1; 
                         end
                     end
                     else begin
-                        if(L2_write || L2_read) begin
+                        if((L2_write || L2_read)) begin
                             L2_ready_w              = 1'd0;
                             D_state_w               = READ_STALL;
                             mem_read_D_w            = 1'd1;
                             mem_addr_D_w            = L2_addr[29:2];
-                            cache_w[index_D][150]   = 1'd1; 
+                            // cache_w[index_D][150]   = 1'd1; 
                             mem_write_D_w           = 1'd0;
                             mem_wdata_D_w           = 32'd0;
                         end
                     end
                 end
                 else begin
-                    if(L2_read || L2_write) begin
-                        if(dirty_in_cache_D) begin
-                            L2_ready_w      = 1'd0;
-                            D_state_w       = WRITE_STALL_WRITE;
-                            mem_wdata_D_w   = cache_r[index_D][127:0];
-                            mem_write_D_w   = 1'd1;
-                            mem_addr_D_w    = {tag_in_cache_D, index_D};
-                            mem_read_D_w    = 1'd0;
+                    if((L2_read || L2_write)) begin
+                        if(which_in_cache_D == 1'd1) begin
+                            if(dirty_in_cache_D) begin
+                                L2_ready_w      = 1'd0;
+                                D_state_w       = WRITE_STALL_WRITE;
+                                mem_wdata_D_w   = cache_r[index_D][127:0];
+                                mem_write_D_w   = 1'd1;
+                                mem_addr_D_w    = {tag_in_cache_D, index_D};
+                                mem_read_D_w    = 1'd0;
+                                // cache_w[index_D][151] = 1'd0;
+                            end
+                            else begin
+                                L2_ready_w              = 1'd0;
+                                D_state_w               = READ_STALL;
+                                mem_read_D_w            = 1'd1;
+                                mem_addr_D_w            = L2_addr[29:2];
+                                mem_write_D_w           = 1'd0;
+                                mem_wdata_D_w           = 1'd0; 
+                            end
                         end
                         else begin
                             L2_ready_w              = 1'd0;
                             D_state_w               = READ_STALL;
                             mem_read_D_w            = 1'd1;
                             mem_addr_D_w            = L2_addr[29:2];
-                            cache_w[index_D][150]   = 1'd1;
+                            // cache_w[index_D][150]   = 1'd1;
                             mem_write_D_w           = 1'd0;
                             mem_wdata_D_w           = 1'd0; 
                         end
@@ -291,27 +319,49 @@ module cache_L2(
             end
             READ_STALL:
             begin
+                L2_ready_w      = 1'd0;
                 if(mem_ready_D) begin
-                    D_state_w       = IDLE;
-                    L2_ready_w      = 1'd0;
+                    // L2_ready_w      = 1'd1;
+                    D_state_w       = IDLE; 
                     mem_read_D_w    = 1'd0;
                     mem_addr_D_w    = 28'd0;
+                    mem_write_D_w   = 1'd0;
+                    mem_wdata_D_w   = 1'd0; 
 
                     cache_w[index_D][149:128]   = tag_D;
                     cache_w[index_D][127:0]     = mem_rdata_D;
+                    cache_w[index_D][150]       = 1'd1;
                     cache_w[index_D][151]       = 1'd0;
                     cache_w[index_D][152]       = 1'd1;
                 end
             end
             WRITE_STALL_WRITE:
             begin
-                L2_ready_w = 1'd0;
+                L2_ready_w            = 1'd0;
+                // cache_w[index_D]      = cache_r[index_D];
+                if(mem_ready_D) begin
+                    // L2_ready_w            = 1'd0;
+                    D_state_w             = IDLE;
+                    mem_write_D_w         = 1'd0;
+                    mem_addr_D_w          = 28'd0;
+                    mem_wdata_D_w         = 0;
+                    mem_read_D_w          = 0;
+                    cache_w[index_D][151] = 1'd0;
+
+                end
+            end
+            WRITE_ISTALL:
+            begin
+                // cache_w[index_D]      = cache_r[index_D];
+                L2_ready_w            = 1'd0;
                 if(mem_ready_D) begin
                     D_state_w             = IDLE;
                     mem_write_D_w         = 1'd0;
                     mem_addr_D_w          = 28'd0;
-                    cache_w[index_D][151] = 1'd0;
-                end
+                    mem_wdata_D_w         = 0;
+                    mem_read_D_w          = 0;
+                    cache_w[index_I][151] = 1'd0;
+                end  
             end
         endcase
     end
